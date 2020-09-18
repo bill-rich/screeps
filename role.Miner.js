@@ -5,8 +5,20 @@ var roleMiner = {
 
     /** @param {Creep} creep **/
     run: function(creep, i) {
-        if(creep.harvest(Game.rooms['E47S5'].find(FIND_SOURCES)[1]) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(4,16, {visualizePathStyle: {stroke: '#ffaa00'}});
+        var container = creep.room.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return structure.structureType == STRUCTURE_CONTAINER
+            }
+        })
+        if(!creep.pos.isEqualTo(container[0].pos)){
+            if(!creep.moveTo(container[0])){
+                creep.say("blocked")
+            }
+            return
+        }
+        var mineSource = methodEnergy.nearest(creep)
+        if(container[0].store.getFreeCapacity() > 0){
+            creep.harvest(mineSource)
         }
     }
 }

@@ -8,20 +8,16 @@ var roleAttacker = {
         });
         if (!target) {
             if(creep.room != Game.rooms['E2S45']){
+                creep.say("NIL ERROR", true)
                 creep.moveTo(creep.pos.findClosestByRange(creep.room.findExitTo('E2S45')));
                 console.log("moving rooms");
             }
         }
         else {
-            console.log("attacking");
-            console.log("target");
-            console.log(target);
+            creep.say("ELIMINATE", true)
             creep.moveTo(target);
             attack_ret = creep.attack(target);
-            console.log(attack_ret);
             rattack_ret = creep.rangedAttack(target);
-            console.log("rattack");
-            console.log(rattack_ret);
 
         }
     }

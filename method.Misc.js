@@ -20,6 +20,22 @@ var methodRoomSetup = {
             console.log("Placing container at " + path[0].x + "," + path[0].y)
             r.createConstructionSite(path[0].x, path[0].y, STRUCTURE_CONTAINER)
         }
+    },
+    totalEnergy: function(){
+        var r = Game.spawns['TheFort'].room
+        var targets = r.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return (structure.structureType == STRUCTURE_EXTENSION ||
+                    structure.structureType == STRUCTURE_SPAWN
+                );
+            }
+        });
+        var e = 0
+        for(i=0; i < targets.length; i++){
+            e += targets[i].store.getUsedCapacity(RESOURCE_ENERGY)
+        }
+        console.log(e)
+        return e
     }
 }
 
