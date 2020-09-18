@@ -9,9 +9,12 @@ var methodEnergy = {
     dearest: function(creep) {
         var sources = creep.room.find(FIND_SOURCES);
         return sources[0]
-    }
+    },
     
-
+    ruins: function(creep) {
+      var ruins = creep.room.find(FIND_STRUCTURES)
+      return ruins[1]
+    }
 }
 
 module.exports = methodEnergy;

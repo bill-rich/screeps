@@ -5,7 +5,9 @@ var roleHarvester = {
 
     /** @param {Creep} creep **/
     run: function(creep, i) {
+        creep.pos.createConstructionSite(STRUCTURE_ROAD)
         if(creep.store.getFreeCapacity() > 0) {
+            //var dest = methodEnergy.ruins(creep)
             var dest = methodEnergy.nearest(creep)
             var containers = creep.room.find(FIND_STRUCTURES, {
                 filter: (structure) => {
@@ -14,8 +16,8 @@ var roleHarvester = {
             })
             //dest = containers[0]
             if(creep.harvest(dest) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}});
-        }
+              creep.moveTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}});
+            }
         }
         else {
             var targets = creep.room.find(FIND_STRUCTURES, {
