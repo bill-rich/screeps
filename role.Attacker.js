@@ -9,8 +9,10 @@ var roleAttacker = {
         if (!target) {
             if(creep.room != Game.rooms['E2S45']){
                 creep.say("NIL ERROR", true)
-                creep.moveTo(creep.pos.findClosestByRange(creep.room.findExitTo('E2S45')));
-                console.log("moving rooms");
+                creep.moveTo(creep.pos.findClosestByRange(creep.room.findExitTo('E2S45')), {visualizePathStyle: {stroke: '#ffffff'}})
+                //creep.moveTo(creep.room.findExitTo('E2S45'), {visualizePathStyle: {stroke: '#ffffff'}});
+                //console.log(creep.moveTo(RoomPosition(27,37,'E2S44'), {visualizePathStyle: {stroke: '#ffffff'}}))
+
             }
         }
         else {

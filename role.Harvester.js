@@ -8,15 +8,19 @@ var roleHarvester = {
         //creep.pos.createConstructionSite(STRUCTURE_ROAD)
         if(creep.store.getFreeCapacity() > 0) {
             //var dest = methodEnergy.ruins(creep)
-            var dest = methodEnergy.nearest(creep)
-            var containers = creep.room.find(FIND_STRUCTURES, {
-                filter: (structure) => {
-                    return (structure.structureType == STRUCTURE_CONTAINER)
+            var dest = methodEnergy.sourceContainer(creep)
+            if (!dest){
+                dest = methodEnergy.nearest(creep)
+            }
+            if (dest.structureType == STRUCTURE_CONTAINER){
+                if(creep.withdraw(dest, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                  creep.moveTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}});
                 }
-            })
-            //dest = containers[0]
-            if(creep.harvest(dest) == ERR_NOT_IN_RANGE) {
-              creep.moveTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}});
+            }
+            else {
+                if(creep.harvest(dest) == ERR_NOT_IN_RANGE) {
+                  creep.moveTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}});
+                }
             }
         }
         else {
@@ -28,12 +32,12 @@ var roleHarvester = {
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
                 }
             });
-            for(i=0; i<targets.length; i++){
-                if(targets[i].structureType == STRUCTURE_EXTENSION) {
-                    targets[0] = targets[i]
-                    break
-                }
-            }
+            //for(i=0; i<targets.length; i++){
+            //    if(targets[i].structureType == STRUCTURE_EXTENSION) {
+            //        targets[0] = targets[i]
+            //        break
+            //    }
+            //}
             if(targets.length > 0) {
                 if(creep.transfer(targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});

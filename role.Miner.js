@@ -10,14 +10,15 @@ var roleMiner = {
                 return structure.structureType == STRUCTURE_CONTAINER
             }
         })
-        if(!creep.pos.isEqualTo(container[0].pos)){
-            if(!creep.moveTo(container[0])){
-                creep.say("blocked")
-            }
+        if(i>= container.length) {
+            i = i - container.length
+        }
+        if(!creep.pos.isEqualTo(container[i].pos)){
+            creep.moveTo(container[i])
             return
         }
         var mineSource = methodEnergy.nearest(creep)
-        if(container[0].store.getFreeCapacity() > 0){
+        if(container[i].store.getFreeCapacity() > 0){
             creep.harvest(mineSource)
         }
     }

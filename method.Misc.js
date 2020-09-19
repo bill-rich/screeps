@@ -8,8 +8,7 @@
  */
 
 var methodRoomSetup = {
-    energyContainers: function(r) {
-        var sources = r.find(FIND_SOURCES)
+    placeEnergyContainers: function(r) {
         var targets = r.find(FIND_STRUCTURES, {
             filter: (structure) => {
                 return structure.structureType == STRUCTURE_SPAWN
@@ -36,7 +35,15 @@ var methodRoomSetup = {
         }
         console.log(e)
         return e
+    },
+    energyContainers: function(r) {
+        return r.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return structure.structureType == STRUCTURE_CONTAINER
+            }
+        })
     }
+
 }
 
 module.exports = methodRoomSetup
