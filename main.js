@@ -66,10 +66,10 @@ module.exports.loop = function () {
             Game.spawns['TheFort'].spawnCreep([WORK,WORK,CARRY,CARRY,MOVE,MOVE], newName,
                 {memory: {role: 'harvester'}});
         }
-        if(builders.length < 3) {
+        if(builders.length < 5 && spawnEnergy > 650) {
             var newName = 'Builder' + Game.time;
             console.log('Spawning new builder: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([WORK,WORK,CARRY,CARRY,MOVE,MOVE], newName,
+            Game.spawns['TheFort'].spawnCreep([WORK,WORK,WORK,WORK,CARRY,CARRY,MOVE,MOVE,MOVE], newName,
                 {memory: {role: 'builder'}});
         }
         if(upgraders.length < 1) {

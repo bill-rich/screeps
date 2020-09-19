@@ -26,15 +26,29 @@ var roleRunner = {
                 low = containers[i]
             }
         }
+        storageContainer = creep.room.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return structure.structureType == STRUCTURE_STORAGE
+            }
+        })
+       
         if(creep.memory.loaded && low) {
             if(creep.transfer(low, RESOURCE_ENERGY) < 0){
                 creep.moveTo(low)
             }
+            return
         }
-        else if(full) {
+        else if(full && !creep.memory.loaded) {
             if(creep.withdraw(full, RESOURCE_ENERGY) < 0){
                 creep.moveTo(full)
             }
+            return
+        }
+        if(storageContainer[0].store.getFreeCapacity() > 0 && full) {
+            if(creep.transfer(storageContainer[0], RESOURCE_ENERGY) < 0){
+                creep.moveTo(storageContainer[0])
+            }
+            return
         }
             
     }
