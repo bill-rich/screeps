@@ -11,7 +11,7 @@ var roleAttacker = {
                 creep.say("NIL ERROR", true)
                 creep.moveTo(creep.pos.findClosestByRange(creep.room.findExitTo('E2S45')), {visualizePathStyle: {stroke: '#ffffff'}})
                 //creep.moveTo(creep.room.findExitTo('E2S45'), {visualizePathStyle: {stroke: '#ffffff'}});
-                //console.log(creep.moveTo(RoomPosition(27,37,'E2S44'), {visualizePathStyle: {stroke: '#ffffff'}}))
+                //console.log(creep.moveTo(RoomPosition(27,37, creep.room.name), {visualizePathStyle: {stroke: '#ffffff'}}))
 
             }
         }

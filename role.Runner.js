@@ -19,26 +19,24 @@ var roleRunner = {
         var full = 0
         var low = 0
         for(var i = 0; i < containers.length; i++){
-            if(containers[i].store.getFreeCapacity(RESOURCE_ENERGY) < 500){
+            if(containers[i].store.getFreeCapacity(RESOURCE_ENERGY) < 1000){
                 full = containers[i]
             }
-            if(containers[i].store.getUsedCapacity(RESOURCE_ENERGY) < 200){
+            if(containers[i].store.getUsedCapacity(RESOURCE_ENERGY) < 1000){
                 low = containers[i]
             }
         }
-        if(full && low){
-            if(creep.memory.loaded) {
-                if(creep.transfer(low, RESOURCE_ENERGY) < 0){
-                    creep.moveTo(low)
-                }
+        if(creep.memory.loaded && low) {
+            if(creep.transfer(low, RESOURCE_ENERGY) < 0){
+                creep.moveTo(low)
             }
-            else {
-                if(creep.withdraw(full, RESOURCE_ENERGY) < 0){
-                    creep.moveTo(full)
-                }
-            }
-            
         }
+        else if(full) {
+            if(creep.withdraw(full, RESOURCE_ENERGY) < 0){
+                creep.moveTo(full)
+            }
+        }
+            
     }
 }
         
