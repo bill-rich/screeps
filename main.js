@@ -1,123 +1,139 @@
-
-var roleHarvester = require('role.Harvester');
-var roleMiner = require('role.Miner');
-var roleUpgrader = require('role.Upgrader');
-var roleBuilder = require('role.Builder');
-var roleExpander = require('role.Expander');
-var roleAttacker = require('role.Attacker');
-var roleRunner = require('role.Runner');
-var methodRoomSetup = require('method.Misc');
-
-
 module.exports.loop = function () {
-    var tower = Game.getObjectById('5f65100c7f58927b257d2466');
-    if(tower) {
-        var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-        if(closestHostile) {
-            tower.attack(closestHostile);
-        }
-        var structs = tower.room.find(FIND_STRUCTURES, {
-            filter: (structure) => structure.hits < structure.hitsMax
-        })
-        var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure) => structure.hits < structure.hitsMax
-        });
-        for(i=0; i<structs.length; i++){
-            if((structs[i].structureType != STRUCTURE_WALL && structs[i].structureType != STRUCTURE_RAMPART) || structs[i].structureType == STRUCTURE_WALL && structs[i].hits < 1000 || structs[i].structureType == STRUCTURE_RAMPART && structs[i].hits < 1000){
-                tower.repair(structs[i]);
-                break
-            }
-        }
+  var room = new roomInfo()
+  for(var name in Game.creeps){
+    var creep = new creepInfo(Game.creeps[name])
+    creep.getEnergy()
+  }
+}
 
+class roomInfo{
+  constructor(){
+    this.room = _.filter(Game.rooms,  (room)  => room.controller.my)[0]
+  }
+
+  totalSpawnEnergy(){
+    var targets = this.room.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return (structure.structureType == STRUCTURE_EXTENSION ||
+          structure.structureType == STRUCTURE_SPAWN
+        );
+      }
+    });
+    var totalEnergy = 0
+    for(i=0; i < targets.length; i++){
+      totalEnergy += targets[i].store.getUsedCapacity(RESOURCE_ENERGY)
     }
-    var sourceContainers = methodRoomSetup.energyContainers(Game.spawns['TheFort'].room)
-    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
-    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-    var expanders = _.filter(Game.creeps, (creep) => creep.memory.role == 'expander');
-    var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker');
-    var runners = _.filter(Game.creeps, (creep) => creep.memory.role == 'runner');
-    var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner');
-    var minerMod = 0
-    for (var i=0; i < miners.length; i++){
-        if(miners[i].ticksToLive < 120) {
-            minerMod++
-        }
+    return totalEnergy
+  }
+
+  energyContainers() {
+    return this.room.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return structure.structureType == STRUCTURE_CONTAINER
+      }
+    })
+  }
+}
+
+class creepInfo{
+  constructor(creep){
+    this.creep = creep
+  }
+  nearestEnergySource() {
+    var sources = this.creep.room.find(FIND_SOURCES);
+    var sorted = _.sortBy(sources, s => this.creep.pos.getRangeTo(s))
+    return sorted[0]
+  }
+  
+  closestSourceContainer() {
+     var sources = this.creep.room.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return structure.structureType == STRUCTURE_CONTAINER && structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+      }
+    });
+    var sorted = _.sortBy(sources, s => creep.pos.getRangeTo(s))
+    return sorted[0]
+  }
+
+  getEnergy(){
+    var source = this.bestEnergySource()
+    var flag = this.navStartFlag(source)
+    if(this.creep.store.getFreeCapacity() == 0){
+      this.creep.memory.waypoint = ""
+      this.creep.memory.task = ""
+      return
     }
-    var spawnEnergy = methodRoomSetup.totalEnergy()
-    if(spawnEnergy >= 150) {
-        if(attackers.length < 0) {
-            var newName = 'Attacker' + Game.time;
-            console.log('Spawning new attacker: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([ATTACK,MOVE], newName,
-                {memory: {role: 'attacker'}});
-        }
+    if(!this.creep.memory.task){
+      this.creep.memory.task = "loadEnergy"
     }
-    if(spawnEnergy >= 400) {
-        if(runners.length < 2) {
-            var newName = 'Runner' + Game.time;
-            console.log('Spawning new runner: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([CARRY,CARRY,CARRY,CARRY,MOVE,MOVE], newName,
-                {memory: {role: 'runner'}});
-        }
-        if(harvesters.length < 3) {
-            var newName = 'Harvester' + Game.time;
-            console.log('Spawning new harvester: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([WORK,WORK,CARRY,CARRY,MOVE,MOVE], newName,
-                {memory: {role: 'harvester'}});
-        }
-        if(builders.length < 5 && spawnEnergy > 650) {
-            var newName = 'Builder' + Game.time;
-            console.log('Spawning new builder: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([WORK,WORK,WORK,WORK,CARRY,CARRY,MOVE,MOVE,MOVE], newName,
-                {memory: {role: 'builder'}});
-        }
-        if(upgraders.length < 1) {
-            var newName = 'Upgrader' + Game.time;
-            console.log('Spawning new upgrader: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([WORK,WORK,CARRY,CARRY,MOVE,MOVE], newName,
-                {memory: {role: 'upgrader'}});
-        }
-        if(expanders.length < 0) {
-            var newName = 'Expander' + Game.time;
-            console.log('Spawning new expander: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([CLAIM,MOVE], newName,
-                {memory: {role: 'expander'}});
-        }
-        if(miners.length - minerMod < sourceContainers.length && spawnEnergy >= 550) {
-            var newName = 'Miner' + Game.time;
-            console.log('Spawning new miner: ' + newName);
-            Game.spawns['TheFort'].spawnCreep([MOVE,WORK,WORK,WORK,WORK,WORK], newName,
-                {memory: {role: 'miner'}});
-        }
-    }
-    var i=0
-    var c=0
-    for(var name in Game.creeps) {
-        var creep = Game.creeps[name];
-        if(creep.memory.role == 'miner') {
-            roleMiner.run(creep, c);
-            c++
-        }
-        if(creep.memory.role == 'harvester') {
-            roleHarvester.run(creep, i);
-            i++
-        }
-        if(creep.memory.role == 'upgrader') {
-            roleUpgrader.run(creep, i);
-        }
-        if(creep.memory.role == 'builder') {
-            roleBuilder.run(creep, i);
-        }
-        if(creep.memory.role == 'expander') {
-            roleExpander.run(creep, i);
-        }
-        if(creep.memory.role == 'attacker') {
-            roleAttacker.run(creep, i);
-        }
-        if(creep.memory.role == 'runner') {
-            roleRunner.run(creep, i);
-        }
+    if(!this.creep.memory.waypoint && this.creep.pos.getRangeTo(source) > this.creep.pos.getRangeTo(flag)){
+        this.creep.memory.waypoint = flag.name
     }
 
+    if(!this.creep.memory.waypoint){
+      if(this.creep.harvest(source) == ERR_NOT_IN_RANGE){
+        this.creep.moveTo(source)
+      }
+      return
+    }
+
+    if(!this.creep.pos.isEqualTo(Game.flags[this.creep.memory.waypoint])){
+      this.creep.say("Moving")
+      console.log(this.creep.moveTo(Game.flags[this.creep.memory.waypoint]))
+    }
+    else {
+      if(Game.flags[this.creep.memory.waypoint].memory.type == "trafficIn"){
+        this.creep.memory.waypoint = this.navEndFlag(source).name
+      }
+      else {
+        this.creep.memory.waypoint = ""
+      }
+    }
+  }
+
+  bestEnergySource(){
+    return this.nearestEnergySource()
+  }
+
+  navStartFlag(){
+    var flags = this.creep.room.find(FIND_FLAGS, {
+      filter: (flag) => {
+        return flag.memory.type == "trafficIn"
+      }
+    })
+    var sorted = _.sortBy(flags, flag => this.creep.pos.getRangeTo(flag))
+    return sorted[0]
+  }
+
+  navEndFlag(source){
+    var flags = this.creep.room.find(FIND_FLAGS, {
+      filter: (flag) => {
+        return flag.memory.type == "trafficOut"
+      }
+    })
+    var sorted = _.sortBy(flags, flag => source.pos.getRangeTo(flag))
+    return sorted[0]
+  }
+}
+
+
+
+class creepActions{
+  acquireEnergy(creep){
+  }
+  
+  upgradeController(){
+  }
+
+  refillSpawnEnergy(){
+  }
+
+  buildConstruction(){
+  }
+
+  mineEnergy(){
+  }
+
+  gotoMiningSpot(){
+  }
 }
