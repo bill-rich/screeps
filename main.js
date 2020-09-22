@@ -2,7 +2,7 @@ module.exports.loop = function () {
   var room = new roomInfo()
   for(var name in Game.creeps){
     var creep = new creepInfo(Game.creeps[name])
-    creep.getEnergy()
+    creep.manageEnergy()
   }
 }
 
@@ -55,40 +55,95 @@ class creepInfo{
     return sorted[0]
   }
 
-  getEnergy(){
-    var source = this.bestEnergySource()
-    var flag = this.navStartFlag(source)
-    if(this.creep.store.getFreeCapacity() == 0){
-      this.creep.memory.waypoint = ""
-      this.creep.memory.task = ""
-      return
-    }
+  manageEnergy(){
     if(!this.creep.memory.task){
       this.creep.memory.task = "loadEnergy"
     }
-    if(!this.creep.memory.waypoint && this.creep.pos.getRangeTo(source) > this.creep.pos.getRangeTo(flag)){
-        this.creep.memory.waypoint = flag.name
+
+    if(this.creep.memory.task == "loadEnergy"){
+      this.getEnergy()
     }
 
-    if(!this.creep.memory.waypoint){
-      if(this.creep.harvest(source) == ERR_NOT_IN_RANGE){
-        this.creep.moveTo(source)
+    if(this.creep.memory.task == "unloadEnergy"){
+      this.unloadEnergy()
+    }
+  }
+
+  unloadEnergy(){
+    if(!this.creep.memory.path){
+      var target = this.bestEnergyTarget()
+      // This could be optimized for reduced CPU because it is called when the
+      // creep is past the last waypoint.
+      if(!this.getNextStepTo(target)){
+          console.log("ok")
+        if(this.creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
+          this.creep.moveTo(target)
+        }
       }
-      return
-    }
-
-    if(!this.creep.pos.isEqualTo(Game.flags[this.creep.memory.waypoint])){
-      this.creep.say("Moving")
-      console.log(this.creep.moveTo(Game.flags[this.creep.memory.waypoint]))
     }
     else {
-      if(Game.flags[this.creep.memory.waypoint].memory.type == "trafficIn"){
-        this.creep.memory.waypoint = this.navEndFlag(source).name
-      }
-      else {
-        this.creep.memory.waypoint = ""
+      var path = Room.deserializePath(this.creep.memory.path)
+      if(this.creep.moveByPath(path) == ERR_NOT_FOUND){
+        this.creep.memory.path = ""
       }
     }
+    if(this.creep.store.getUsedCapacity() == 0){
+      this.creep.memory.task = "loadEnergy"
+    }
+  }
+
+  bestEnergyTarget() {
+    // Put logic for where to put energy here
+    return this.creep.room.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return structure.structureType == STRUCTURE_SPAWN
+      }
+    })[0]
+  }
+
+  getEnergy(){
+    if(!this.creep.memory.path){
+      var source = this.bestEnergySource()
+      // This could be optimized for reduced CPU because it is called when the
+      // creep is past the last waypoint.
+      if(!this.getNextStepTo(source)){
+        if(this.creep.harvest(source) == ERR_NOT_IN_RANGE){
+          this.creep.moveTo(source)
+        }
+      }
+    }
+    else {
+      var path = Room.deserializePath(this.creep.memory.path)
+      if(this.creep.moveByPath(path) == ERR_NOT_FOUND){
+        this.creep.memory.path = ""
+      }
+    }
+    if(this.creep.store.getFreeCapacity() == 0){
+      this.creep.memory.task = "unloadEnergy"
+    }
+  }
+
+  getNextStepTo(destination){
+    var closestStartFlag = this.navStartFlag(destination)
+    var targetFlag = this.navEndFlag(destination)
+
+    if(this.creep.pos.isEqualTo(closestStartFlag)){
+      this.creep.memory.path = this.creep.room.findPath(this.creep.pos, targetFlag.pos, {
+        ignoreCreeps : true,
+        serialize    : true,
+      })
+      return true
+    }
+    
+    if(this.creep.pos.getRangeTo(destination) > this.creep.pos.getRangeTo(closestStartFlag)){
+      // Generate path
+      this.creep.memory.path = this.creep.room.findPath(this.creep.pos, closestStartFlag.pos, {
+        ignoreCreeps : true,
+        serialize    : true,
+      })
+      return true
+    }
+    return false
   }
 
   bestEnergySource(){
@@ -118,22 +173,3 @@ class creepInfo{
 
 
 
-class creepActions{
-  acquireEnergy(creep){
-  }
-  
-  upgradeController(){
-  }
-
-  refillSpawnEnergy(){
-  }
-
-  buildConstruction(){
-  }
-
-  mineEnergy(){
-  }
-
-  gotoMiningSpot(){
-  }
-}
