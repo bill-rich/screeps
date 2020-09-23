@@ -1,3 +1,5 @@
+var DO_NOT_REPAIR = [STRUCTURE_WALL];
+
 function sourceUsers(source){
     let count = 0
     for(let name in Game.creeps){
@@ -7,6 +9,50 @@ function sourceUsers(source){
         }
     }
     return count
+}
+
+function autoRepair(creep){
+	if(creep.store[RESOURCE_ENERGY] > 0){
+		var damaged  = creep.pos.findInRange(FIND_STRUCTURES, 1, {
+			filter: (structure) => {
+				return (structure.pos != creep.pos && (structure.hits / structure.hitsMax) < 0.8)
+					&& !DO_NOT_REPAIR.includes(structure.structureType);
+			}
+		});
+		if(damaged.length > 0){
+			creep.say("auto 🛠");
+			var repair_result = creep.repair(damaged[0]);
+		}
+	}
+}
+
+Creep.prototype.autoPathTo = function(target){
+	autoRepair(this)
+  if(!this.memory.path){
+    this.memory.path = this.room.findPath(this.pos, target.pos, {
+      ignoreCreeps: true,
+      serialize: true,
+    })
+  }
+  this.memory.lastPos = this.pos
+  this.moveByPath(this.memory.path)
+    console.log(this.memory.failedMoves)
+  if(!this.memory.lastPos.isEqualTo(this.pos)){
+    console.log(this.memory.failedMoves)
+    this.memory.failedMoves = 0
+    return OK
+  } else {
+    this.memory.failedMoves = this.memory.failedMoves + 1
+  }
+  if(this.memory.failedMoves >= 5){
+    this.memory.failedMoves = 0
+    this.memory.path = this.room.findPath(this.pos, target.pos, {
+      ignoreCreeps: false,
+      serialize: true,
+    })
+    return this.moveByPath(this.memory.path)
+  }
+  return ERR_NOT_FOUND
 }
 
 Creep.prototype.bestEnergySource = function(){

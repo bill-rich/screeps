@@ -40,7 +40,8 @@ module.exports = class {
       } else {
         target = Game.getObjectById(this.creep.memory.target)
         if(this.creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-          this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+          //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+          this.creep.autoPathTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
         } else {
           this.creep.memory.target = ""
         }

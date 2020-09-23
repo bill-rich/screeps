@@ -36,7 +36,8 @@ module.exports = class {
       var target = Game.getObjectById(this.creep.memory.target)
       var result = this.creep.build(target)
       if(result == ERR_NOT_IN_RANGE) {
-        this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
+        //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
+        this.creep.autoPathTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
       }
       if(result == ERR_INVALID_TARGET) {
         this.creep.memory.target = ""
