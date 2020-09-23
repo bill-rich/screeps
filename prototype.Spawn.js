@@ -198,8 +198,8 @@ function needed_harvs(room){
         return sources.length;
     }
     let count = 0;
-    for(s of sources){
-        for(p of s.pos.adjacent()){
+    for(let s of sources){
+        for(let p of s.pos.adjacent()){
             if(p.canBuild()){
                 count+=1;
             }

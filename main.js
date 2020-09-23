@@ -50,6 +50,16 @@ module.exports.loop = function () {
     //  spawn.spawnCreep([WORK,CARRY,CARRY,MOVE,MOVE], newName,
     //    {memory: {role: 'harvester'}});
     //}
+    var towers = nroom.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return structure.structureType == STRUCTURE_TOWER
+      }
+    })
+
+    for(let t of towers){
+      let towerObj = new tower(t)
+      towerObj.run()
+    }
     
     for(var name in Game.creeps) {
       var creep = Game.creeps[name]
