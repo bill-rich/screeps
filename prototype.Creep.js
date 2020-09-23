@@ -1,8 +1,19 @@
+function sourceUsers(source){
+    let count = 0
+    for(let name in Game.creeps){
+        let creep = Game.creeps[name]
+        if(creep.memory.target == source.id){
+            count++
+        }
+    }
+    return count
+}
 
 Creep.prototype.bestEnergySource = function(){
+    let maxUsers = 3
   var sources = this.room.find(FIND_SOURCES, {
     filter: (source) => {
-      //return Memory.users <= Memory.maxUsers
+      sourceUsers(source) <= maxUsers
       return true
     }
   })

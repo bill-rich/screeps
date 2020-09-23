@@ -28,7 +28,14 @@ module.exports = class {
           structure.pos.getRangeTo(source.pos) == 1
         )
       }
-    })[0]
+    })
+    var containerConstruction = this.creep.room.find(FIND_CONSTRUCTION_SITES, {
+      filter: (structure) => {
+        return (structure.structureType == STRUCTURE_CONTAINER &&
+          structure.pos.getRangeTo(source.pos) == 1
+        )
+      }
+    })
     if(container && this.creep.pos.getRangeTo(container.pos) ){
       this.creep.moveTo(container)
       return
@@ -37,7 +44,7 @@ module.exports = class {
     if(result == ERR_NOT_IN_RANGE){
       this.creep.moveTo(source)
     }
-    if(result == OK && !container){
+    if(result == OK && !container && !containerConstruction){
       this.creep.room.createConstructionSite(this.creep.pos, STRUCTURE_CONTAINER)
     }
   }
