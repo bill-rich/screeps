@@ -45,6 +45,10 @@ Creep.prototype.acquireEnergy = function(){
     this.memory.target = dest.id
   }
   var dest = Game.getObjectById(this.memory.target)
+  if(!dest){
+    this.memory.target = ""
+    return
+  }
   var result
   if(dest.structureType){
     result = this.withdraw(dest, RESOURCE_ENERGY)

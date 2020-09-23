@@ -28,14 +28,17 @@ module.exports = class {
           structure.pos.getRangeTo(source.pos) == 1
         )
       }
-    })
+    })[0]
     if(container && this.creep.pos.getRangeTo(container.pos) ){
-      console.log("uh")
       this.creep.moveTo(container)
       return
     }
-    if(this.creep.harvest(source) == ERR_NOT_IN_RANGE){
+    var result = this.creep.harvest(source)
+    if(result == ERR_NOT_IN_RANGE){
       this.creep.moveTo(source)
+    }
+    if(result == OK && !container){
+      this.creep.room.createConstructionSite(this.creep.pos, STRUCTURE_CONTAINER)
     }
   }
 }

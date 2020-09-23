@@ -8,6 +8,7 @@ let roleBuilder = require('role.builder')
 let roleMiner = require('role.miner')
 let roleUpgrader = require('role.upgrader')
 let roleRemoteHarvester = require('role.remoteharvester')
+let tower = require('tower')
 
 module.exports.loop = function () {
   var room, harvesters, spawn, builders, miners, upgraders
