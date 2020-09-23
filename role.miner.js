@@ -36,8 +36,8 @@ module.exports = class {
         )
       }
     })
-    if(container && this.creep.pos.getRangeTo(container.pos) ){
-      this.creep.moveTo(container)
+    if(container && this.creep.pos.getRangeTo(container[0].pos) ){
+      this.creep.moveTo(container[0])
       return
     }
     var result = this.creep.harvest(source)
