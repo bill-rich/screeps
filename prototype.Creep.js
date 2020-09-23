@@ -26,6 +26,17 @@ function autoRepair(creep){
 	}
 }
 
+Creep.prototype.movePath = function(){
+  var path = Room.deserializePath(this.memory.path)
+  if(this.moveByPath(this.memory.path) == OK){
+    path.shift()
+    this.memory.path = Room.serializePath(path)
+    return OK
+  } else {
+    this.memory.failedMoves = this.memory.failedMoves + 1
+    return ERR_INVALID_ARGS
+  }
+}
 Creep.prototype.autoPathTo = function(target){
 	autoRepair(this)
   if(!this.memory.path){
@@ -34,21 +45,14 @@ Creep.prototype.autoPathTo = function(target){
       serialize: true,
     })
   }
-  this.memory.lastPos = this.pos
-  this.moveByPath(this.memory.path)
-  if(!this.memory.lastPos.isEqualTo(this.pos)){
-    this.memory.failedMoves = 0
-    return OK
-  } else {
-    this.memory.failedMoves = this.memory.failedMoves + 1
-  }
+  this.movePath()
   if(this.memory.failedMoves >= 5){
     this.memory.failedMoves = 0
     this.memory.path = this.room.findPath(this.pos, target.pos, {
       ignoreCreeps: false,
       serialize: true,
     })
-    return this.moveByPath(this.memory.path)
+    return this.movePath()
   }
   return ERR_NOT_FOUND
 }

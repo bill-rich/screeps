@@ -24,6 +24,9 @@ module.exports = class {
     var source = Game.getObjectById(this.creep.memory.miningTarget)
     var container = this.creep.room.find(FIND_STRUCTURES, {
       filter: (structure) => {
+        if(!structure){
+          return false
+        }
         return (structure.structureType == STRUCTURE_CONTAINER &&
           structure.pos.getRangeTo(source.pos) == 1
         )

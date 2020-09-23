@@ -30,6 +30,9 @@ Room.prototype.createRoads = function(){
         ignoreRoads:  true,
       })
       for(let coord of path){
+        if(coord == path[0]){
+          continue
+        }
         this.createConstructionSite(coord.x,coord.y, STRUCTURE_ROAD)
       }
     }

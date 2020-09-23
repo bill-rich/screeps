@@ -114,7 +114,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
         return this.spawnCreep(body, newName, {memory: {role: 'upgrader'}});
     };
 
-    StructureSpawn.prototype.createHarvester = function(energyCap) {
+    StructureSpawn.prototype.createMiner = function(energyCap) {
 
         var body = [WORK,WORK,CARRY,MOVE];
         if( energyCap >= 450 ){
@@ -127,11 +127,11 @@ StructureSpawn.prototype.spawn_creeps = function() {
             body = [WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE];
         }
         console.log("ecap" + energyCap + "spawning harv" + body);
-        var newName = 'harvester' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'harvester', pickingUp: true}});
+        var newName = 'Miner' + Game.time;
+        return this.spawnCreep(body, newName, {memory: {role: 'miner'}});
     };
 
-    StructureSpawn.prototype.createMiner = function(energyCap) {
+    StructureSpawn.prototype.createHarvester = function(energyCap) {
         var energyAvailable = this.room.energyAvailable;
 
         if(energyAvailable < energyCap || energyAvailable < 300){
@@ -140,15 +140,17 @@ StructureSpawn.prototype.spawn_creeps = function() {
         }
         // always make [carry, carry, move]*X which costs 200 per x
         // don't make janitors bigger than size 10 for now
-        var bodySize = Math.min(Math.floor((energyAvailable-50) / 150), 10);
+        var bodySize = Math.min(Math.floor((energyAvailable) / 300), 10);
         var body = [];
-        body.push(CARRY);
         for(let i=0; i<bodySize; i++){
             body.push(WORK);
+            body.push(CARRY);
+            body.push(CARRY);
+            body.push(MOVE);
             body.push(MOVE);
         }
-        var newName = 'miner' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'miner'}});
+        var newName = 'Harvester' + Game.time;
+        return this.spawnCreep(body, newName, {memory: {role: 'harvester', pickingUp: true}});
     };
 
     StructureSpawn.prototype.createAttacker = function(energyCap) {
@@ -194,9 +196,6 @@ StructureSpawn.prototype.spawn_creeps = function() {
 
 function needed_harvs(room){
     let sources = room.find(FIND_SOURCES);
-    if(room.energyCapacityAvailable > 500){
-        return sources.length;
-    }
     let count = 0;
     for(let s of sources){
         for(let p of s.pos.adjacent()){
@@ -205,6 +204,8 @@ function needed_harvs(room){
             }
         }
     }
+  console.log(count)
+    //return count
     return Math.floor(count/2);
 }
 
