@@ -36,9 +36,7 @@ Creep.prototype.autoPathTo = function(target){
   }
   this.memory.lastPos = this.pos
   this.moveByPath(this.memory.path)
-    console.log(this.memory.failedMoves)
   if(!this.memory.lastPos.isEqualTo(this.pos)){
-    console.log(this.memory.failedMoves)
     this.memory.failedMoves = 0
     return OK
   } else {
@@ -122,7 +120,7 @@ Creep.prototype.acquireEnergy = function(){
     }
   }
   if(result == ERR_NOT_IN_RANGE) {
-    this.moveTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}})
+    this.autoPathTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}})
   }
   if(result == ERR_NOT_ENOUGH_ENERGY) {
     this.memory.target = ""

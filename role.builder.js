@@ -1,3 +1,4 @@
+var styles = require('styles')
 let roleUpgrader = require('role.upgrader')
 
 module.exports = class {
@@ -37,7 +38,7 @@ module.exports = class {
       var result = this.creep.build(target)
       if(result == ERR_NOT_IN_RANGE) {
         //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
-        this.creep.autoPathTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
+        this.creep.autoPathTo(target, {visualizePathStyle: styles.repair})
       }
       if(result == ERR_INVALID_TARGET) {
         this.creep.memory.target = ""

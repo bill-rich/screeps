@@ -37,13 +37,12 @@ module.exports = class {
       }
     })
     if(container.length > 0 && this.creep.pos.getRangeTo(container[0].pos) ){
-      this.creep.moveTo(container[0])
+      this.creep.autoPathTo(container[0])
       return
     }
     var result = this.creep.harvest(source)
-      console.log(result)
     if(result == ERR_NOT_IN_RANGE){
-      this.creep.moveTo(source)
+      this.creep.autoPathTo(source)
     }
     if(result == OK && !container && !containerConstruction){
       this.creep.room.createConstructionSite(this.creep.pos, STRUCTURE_CONTAINER)

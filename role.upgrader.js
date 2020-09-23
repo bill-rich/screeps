@@ -16,7 +16,8 @@ module.exports = class {
     var target = this.creep.room.controller;
     if(this.creep.memory.upgrading) {
       if(this.creep.upgradeController(target) == ERR_NOT_IN_RANGE) {
-        this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
+        //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
+        this.creep.autoPathTo(target, {visualizePathStyle: {stroke: '#ffffff'}})
       }
     }
     if(!this.creep.memory.upgrading) {

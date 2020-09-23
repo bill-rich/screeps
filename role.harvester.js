@@ -1,3 +1,5 @@
+var styles = require('styles')
+
 module.exports = class {
   constructor(creep){
     this.creep = creep
@@ -41,7 +43,7 @@ module.exports = class {
         target = Game.getObjectById(this.creep.memory.target)
         if(this.creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
           //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
-          this.creep.autoPathTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+          this.creep.autoPathTo(target, {visualizePathStyle: styles.harvest})
         } else {
           this.creep.memory.target = ""
         }

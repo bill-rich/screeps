@@ -9,6 +9,7 @@ let roleMiner = require('role.miner')
 let roleUpgrader = require('role.upgrader')
 let roleRemoteHarvester = require('role.remoteharvester')
 let tower = require('tower')
+var styles = require('styles')
 
 module.exports.loop = function () {
   var room, harvesters, spawn, builders, miners, upgraders
@@ -26,30 +27,6 @@ module.exports.loop = function () {
       }
     })[0]
     spawn.spawn_creeps()
-    //if(builders.length < 6 && Game.rooms[room].energyAvailable >= 300) {
-    //  var newName = 'Builder' + Game.time;
-    //  console.log('Spawning new builder: ' + newName);
-    //  spawn.spawnCreep([WORK,CARRY,CARRY,MOVE,MOVE], newName,
-    //    {memory: {role: 'builder'}});
-    //}
-    //if(upgraders.length < 1 && Game.rooms[room].energyAvailable >= 300) {
-    //  var newName = 'Upgrader' + Game.time;
-    //  console.log('Spawning new upgrader: ' + newName);
-    //  spawn.spawnCreep([WORK,CARRY,CARRY,MOVE,MOVE], newName,
-    //    {memory: {role: 'upgrader'}});
-    //}
-    //if(miners.length < 2 && Game.rooms[room].energyAvailable >= 300) {
-    //  var newName = 'miner' + Game.time;
-    //  console.log('Spawning new harvester: ' + newName);
-    //  spawn.spawnCreep([WORK,WORK,CARRY,MOVE], newName,
-    //    {memory: {role: 'miner'}});
-    //}
-    //if(harvesters.length < 3 && Game.rooms[room].energyAvailable >= 300) {
-    //  var newName = 'Harvester' + Game.time;
-    //  console.log('Spawning new harvester: ' + newName);
-    //  spawn.spawnCreep([WORK,CARRY,CARRY,MOVE,MOVE], newName,
-    //    {memory: {role: 'harvester'}});
-    //}
     var towers = nroom.find(FIND_STRUCTURES, {
       filter: (structure) => {
         return structure.structureType == STRUCTURE_TOWER
