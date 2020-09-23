@@ -6,6 +6,11 @@ module.exports = class {
   }
 
   run(){
+    if(this.creep.room.controller.level < 2){
+      var upgrader = new roleUpgrader(this.creep)
+      upgrader.run()
+      return
+    }
     if(this.creep.memory.building && this.creep.store[RESOURCE_ENERGY] == 0) {
       this.creep.memory.building = false;
       this.creep.memory.target = ""

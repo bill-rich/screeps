@@ -23,7 +23,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
         );
 
         var wanted_harvesters = needed_harvs(this.room);
-        var wanted_builders = 8 + Math.floor((storedEnergy + containedEnergy) / (300 * this.room.controller.level));
+        var wanted_builders = wanted_harvesters + Math.floor((storedEnergy + containedEnergy) / (300 * this.room.controller.level));
         var wanted_builders = wanted_builders + Math.floor(storedEnergy / 5000);
 				var wanted_miners = this.room.find(FIND_SOURCES).length
         var wanted_remoteharvesters = 2;
@@ -123,7 +123,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
         if( energyCap >= 550 ){
             body = [WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE];
         }
-        if( energyCap > 550 ){
+        if( energyCap > 700 ){
             body = [WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE];
         }
         console.log("ecap" + energyCap + "spawning harv" + body);
@@ -134,7 +134,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
     StructureSpawn.prototype.createMiner = function(energyCap) {
         var energyAvailable = this.room.energyAvailable;
 
-        if(energyAvailable < energyCap){
+        if(energyAvailable < energyCap || energyAvailable < 300){
             //lets wait to make janitors
             return ERR_NOT_ENOUGH_ENERGY;
         }
