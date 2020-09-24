@@ -23,7 +23,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
         );
 
         var wanted_harvesters = needed_harvs(this.room);
-        var wanted_builders = wanted_harvesters + Math.floor((storedEnergy + containedEnergy) / (300 * this.room.controller.level));
+        var wanted_builders = wanted_harvesters + Math.floor((storedEnergy + containedEnergy) / (275 * this.room.controller.level));
         var wanted_builders = wanted_builders + Math.floor(storedEnergy / 5000);
 				var wanted_miners = this.room.find(FIND_SOURCES).length
         var wanted_remoteharvesters = 2;
@@ -204,7 +204,6 @@ function needed_harvs(room){
             }
         }
     }
-  console.log(count)
     //return count
     return Math.floor(count/2);
 }

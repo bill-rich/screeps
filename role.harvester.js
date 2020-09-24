@@ -1,3 +1,4 @@
+let roleUpgrader = require('role.upgrader')
 var styles = require('styles')
 
 module.exports = class {
@@ -39,16 +40,21 @@ module.exports = class {
           }
           this.creep.memory.target = target.id
         }
-      } else {
-        target = Game.getObjectById(this.creep.memory.target)
-        if(this.creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-          //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
-          this.creep.autoPathTo(target, {visualizePathStyle: styles.harvest})
-        } else {
-          this.creep.memory.target = ""
-        }
-        return
       }
+      target = Game.getObjectById(this.creep.memory.target)
+      if(this.creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+        this.creep.autoPathTo(target, {visualizePathStyle: styles.harvest})
+      } else {
+        this.creep.memory.target = ""
+      }
+      if(!this.creep.memory.target && this.creep.store[RESOURCE_ENERGY] > 0){
+        var upgrader = new roleUpgrader(this.creep)
+        this.creep.say("Promoted!")
+        upgrader.run()
+      }
+      return
+      
     }
   }
 }

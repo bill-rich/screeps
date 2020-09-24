@@ -46,7 +46,8 @@ Creep.prototype.autoPathTo = function(target){
     })
   }
   this.movePath()
-  if(this.memory.failedMoves >= 5){
+  var patience = Math.floor(Math.random() * 5)
+  if(this.memory.failedMoves >= patience){
     this.memory.failedMoves = 0
     this.memory.path = this.room.findPath(this.pos, target.pos, {
       ignoreCreeps: false,
