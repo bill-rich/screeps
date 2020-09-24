@@ -11,7 +11,7 @@ module.exports = class {
     }
     if(this.creep.room.name == Memory.enemyRoom){
 
-      let enemies = this.room.enemyTargets()
+      let enemies = this.creep.room.enemyTargets()
       if(enemies.length == 0){
         Memory.enemyRoom = ""
       }

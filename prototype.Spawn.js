@@ -9,8 +9,10 @@ StructureSpawn.prototype.spawn_creeps = function() {
         var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner').length;
         var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker').length;
         var remoteharvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'remoteharvester').length;
-//        var hostiles = 0
         var hostiles = this.room.enemyTargets().length;
+        if(hostiles){
+          Memory.enemyRoom = this.room.name
+        }
 
         var storedEnergy = 0;
         if(this.room.storage){
@@ -81,6 +83,9 @@ StructureSpawn.prototype.spawn_creeps = function() {
         if(harvesters < wanted_harvesters) {
             return this.createHarvester(energyCap);
         }
+        if(attackers < wanted_attackers) {
+            return this.createAttacker(energyCap);;
+        }
         if(miners < wanted_miners) {
             return this.createMiner(energyCap);
         }
@@ -89,9 +94,6 @@ StructureSpawn.prototype.spawn_creeps = function() {
         }
         if(upgraders < wanted_upgraders) {
             return this.createUpgrader(energyCap);
-        }
-        if(attackers < wanted_attackers) {
-            return this.createAttacker(energyCap);;
         }
         return this.createRemoteHarvester(energyCap);;
         console.log("Nothing to spawn");
