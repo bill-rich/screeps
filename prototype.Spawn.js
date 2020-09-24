@@ -9,7 +9,8 @@ StructureSpawn.prototype.spawn_creeps = function() {
         var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner').length;
         var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker').length;
         var remoteharvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'remoteharvester').length;
-        var hostiles = this.room.find(FIND_HOSTILE_CREEPS).length;
+//        var hostiles = 0
+        var hostiles = this.room.enemyTargets().length;
 
         var storedEnergy = 0;
         if(this.room.storage){
@@ -50,20 +51,25 @@ StructureSpawn.prototype.spawn_creeps = function() {
             console.log("fail over, report low cap:" + this.room.energyAvailable);
             energyCap = this.room.energyAvailable;
         }
-        for(let name in Game.creeps){
-          let creep = Game.creeps[name]
-          let range = this.pos.getRangeTo(creep.pos)
-          if(range <= 1 && creep.memory.suicide == true){
+        let creeps = this.room.find(FIND_MY_CREEPS, {
+          filter: (creep) => {
+            return this.pos.getRangeTo(creep.pos) <= 1
+          }
+        })
+        let sortedCreeps = _.sortBy(creeps, creep => 1600 - creep.ticksToLive)
+        for(let creep of sortedCreeps){
+          if(creep.memory.suicide == true){
             this.recycleCreep(creep)
           }
-          if(range <= 1 && creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250){
-            if(this.renewCreep(creep) == OK){
-              creep.say("Yay! " + creep.ticksToLive)
-            }
-          }
-          if(range <= 1 && energyCap - creep.memory.body > 250 && creep.ticksToLive < 250){
+          if(energyCap - creep.memory.body >= 250 && creep.ticksToLive < 250){
             creep.say("Oh no!")
             this.recycleCreep(creep)
+          }
+          if(creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250){
+            if(this.renewCreep(creep) == OK){
+              creep.say("Yay! " + creep.ticksToLive)
+              break
+            }
           }
         }
         spawn_counts(this, counts_str);
@@ -222,7 +228,14 @@ StructureSpawn.prototype.spawn_creeps = function() {
                   count++
                 }
               }
-              if(count < 2){
+              let targetRoomSources = ""
+              try {
+                targetRoomSources = new Room(targetRoom).find(FIND_SOURCES)
+              } catch {
+                targetRoomSources = [ "unknown" ]
+              }
+
+              if(count < 2 * targetRoomSources.length){
                 console.log("WANT TO GO TO:" + targetRoom)
                 return this.spawnCreep(body, newName, {memory: {role: 'remoteharvester',
                                                                 home: this.room.name,

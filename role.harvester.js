@@ -23,7 +23,7 @@ module.exports = class {
         var targets = this.creep.room.find(FIND_STRUCTURES, {
           filter: (structure) => {
             return ((structure.structureType == STRUCTURE_EXTENSION ||
-              structure.structureType == STRUCTURE_CONTAINER ||
+              //structure.structureType == STRUCTURE_CONTAINER ||
               structure.structureType == STRUCTURE_SPAWN ||
               structure.structureType == STRUCTURE_TOWER ) &&
               structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
@@ -42,6 +42,11 @@ module.exports = class {
           this.creep.memory.target = target.id
         }
       }
+      if(!this.creep.memory.target && this.creep.store[RESOURCE_ENERGY] > 0){
+        this.creep.say("⬆")
+        var upgrader = new roleUpgrader(this.creep)
+        upgrader.run()
+      }
       target = Game.getObjectById(this.creep.memory.target)
       if(this.creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
         //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
@@ -49,13 +54,7 @@ module.exports = class {
       } else {
         this.creep.memory.target = ""
       }
-      if(!this.creep.memory.target && this.creep.store[RESOURCE_ENERGY] > 0){
-        var upgrader = new roleUpgrader(this.creep)
-        this.creep.say("Promoted!")
-        upgrader.run()
-      }
       return
-      
     }
   }
 }

@@ -59,11 +59,11 @@ Creep.prototype.autoPathTo = function(target){
 }
 
 Creep.prototype.bestEnergySource = function(){
-    let maxUsers = 3
+  let maxUsers = 2
   var sources = this.room.find(FIND_SOURCES, {
     filter: (source) => {
-      sourceUsers(source) <= maxUsers
-      return true
+      return (sourceUsers(source) <= maxUsers &&
+              source.energy > 0)
     }
   })
   var containers = this.room.find(FIND_STRUCTURES, {
@@ -83,7 +83,8 @@ Creep.prototype.bestEnergySource = function(){
   })
   var openEnergy = this.room.find(FIND_DROPPED_RESOURCES, {
     filter: (energy) => {
-      return energy.amount >= 100
+        return ( energy.amount >= 100 &&
+                 sourceUsers(energy) <= maxUsers)
     }
   })
 
@@ -111,16 +112,16 @@ Creep.prototype.bestEnergySource = function(){
 }
 
 Creep.prototype.selfMaintain = function(){
-  var energyCap = this.room.energyCapacityAvailable
+  var spawn = Game.getObjectById(Memory.homespawn)
+  var energyCap = spawn.room.energyCapacityAvailable
   if(this.ticksToLive < 250 && this.memory.body >= energyCap){
     this.memory.renew = true
   }
-  if(this.ticksToLive >=1400 || this.memory.body < energyCap || this.room.energyAvailable < energyCap * 0.25){
+  if(this.ticksToLive >=1400 || this.memory.body < energyCap || this.room.energyAvailable < energyCap * 0.25 || spawn.spawning){
     this.memory.renew = false
   }
   if(this.memory.renew){
-    var spawn = Game.getObjectById(Memory.homespawn)
-    this.say("Getting fixed")
+    this.say("🔧")
     this.autoPathTo(spawn)
     return true
   }
@@ -132,12 +133,15 @@ Creep.prototype.acquireEnergy = function(){
   }
   if(!this.memory.target){
     let dest = this.bestEnergySource()
+    if(!dest){
+      return
+    }
     this.memory.target = dest.id
   }
   var dest = Game.getObjectById(this.memory.target)
   if(!dest){
     this.memory.target = ""
-    return
+    return false
   }
   var result
   if(dest.store){
@@ -160,4 +164,5 @@ Creep.prototype.acquireEnergy = function(){
   if(result == ERR_NOT_ENOUGH_ENERGY) {
     this.memory.target = ""
   }
+  return result
 }

@@ -11,7 +11,7 @@ module.exports = class {
     }
     if(this.creep.room.name == Memory.enemyRoom){
 
-      let enemies = this.creep.room.find(FIND_HOSTILE_STRUCTURES)
+      let enemies = this.room.enemyTargets()
       if(enemies.length == 0){
         Memory.enemyRoom = ""
       }
@@ -26,3 +26,4 @@ module.exports = class {
     }
   }
 }
+

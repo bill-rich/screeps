@@ -44,20 +44,24 @@ module.exports = class {
         else{
             // console.log("in da room " + this.creep.memory.targetRoom);
             if(this.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0){
-                var source = this.creep.pos.findClosestByRange(FIND_SOURCES);
-                var result = this.creep.harvest(source)
-                if (result == ERR_NOT_IN_RANGE) {
-                    this.creep.moveTo(source, {visualizePathStyle: styles.prio,
-                                          reusePath: 50,
-                    });
+                this.creep.acquireEnergy()
+                if(this.creep.room.enemyTargets().length > 0){
+                  Memory.enemyRoom = this.creep.room.name
                 }
-                if(result == ERR_NOT_OWNER) {
-                  let enemyStructures = this.creep.room.find(FIND_HOSTILE_STRUCTURES)
-                  let enemyCreeps = this.creep.room.find(FIND_HOSTILE_CREEPS)
-                  if( enemyStructures.length > 0 || enemyCreeps.length > 0 ){
-                    Memory.enemyRoom = this.creep.room.name
-                  }
-                }
+                //var source = this.creep.pos.findClosestByRange(FIND_SOURCES);
+                //var result = this.creep.harvest(source)
+                //if (result == ERR_NOT_IN_RANGE) {
+                //    this.creep.moveTo(source, {visualizePathStyle: styles.prio,
+                //                          reusePath: 50,
+                //    });
+                //}
+                //if(result == ERR_NOT_OWNER) {
+                //  let enemyStructures = this.creep.room.find(FIND_HOSTILE_STRUCTURES)
+                //  let enemyCreeps = this.creep.room.find(FIND_HOSTILE_CREEPS)
+                //  if( enemyStructures.length > 0 || enemyCreeps.length > 0 ){
+                //    Memory.enemyRoom = this.creep.room.name
+                //  }
+                //}
             }
             // we are full go home
             else{

@@ -38,3 +38,13 @@ Room.prototype.createRoads = function(){
     }
   }
 }
+
+Room.prototype.enemyTargets = function(){
+  let enemyStructures = this.find(FIND_HOSTILE_STRUCTURES)
+  let enemyCreeps = this.find(FIND_HOSTILE_CREEPS, {
+    filter: (creep) => {
+      return !Memory.allies.includes(creep.owner)
+    }
+  })
+  return enemyStructures.concat(enemyCreeps)
+}
