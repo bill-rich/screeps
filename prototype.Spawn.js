@@ -63,7 +63,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
           }
           if(range <= 1 && energyCap - creep.memory.body > 250 && creep.ticksToLive < 250){
             creep.say("Oh no!")
-            //this.recycleCreep(creep)
+            this.recycleCreep(creep)
           }
         }
         spawn_counts(this, counts_str);
