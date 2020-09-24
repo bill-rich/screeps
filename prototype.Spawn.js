@@ -46,6 +46,14 @@ StructureSpawn.prototype.spawn_creeps = function() {
             console.log("fail over, report low cap:" + this.room.energyAvailable);
             energyCap = this.room.energyAvailable;
         }
+        for(let name in Game.creeps){
+          let creep = Game.creeps[name]
+          if(this.pos.getRangeTo(creep.pos) <= 1 && creep.ticksToLive < 1000 && creep.memory.body >= energyCap){
+            if(this.renewCreep(creep) == OK){
+              creep.say("Yay! " + creep.ticksToLive)
+            }
+          }
+        }
         spawn_counts(this, counts_str);
         spawn_info(this, energyAvailable, energyCap);
         if(this.spawning){
@@ -91,7 +99,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             body.push(MOVE);
         }
         var newName = 'builder' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'builder', building: true}});
+        return this.spawnCreep(body, newName, {memory: {role: 'builder', building: true, body: energyCap}});
     };
 
     StructureSpawn.prototype.createUpgrader = function(energyCap) {
@@ -111,7 +119,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             body.push(MOVE);
         }
         var newName = 'upgrader' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'upgrader'}});
+        return this.spawnCreep(body, newName, {memory: {role: 'upgrader', body: energyCap}});
     };
 
     StructureSpawn.prototype.createMiner = function(energyCap) {
@@ -128,7 +136,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
         }
         console.log("ecap" + energyCap + "spawning harv" + body);
         var newName = 'Miner' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'miner'}});
+        return this.spawnCreep(body, newName, {memory: {role: 'miner', body: energyCap}});
     };
 
     StructureSpawn.prototype.createHarvester = function(energyCap) {
@@ -150,7 +158,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             body.push(MOVE);
         }
         var newName = 'Harvester' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'harvester', pickingUp: true}});
+        return this.spawnCreep(body, newName, {memory: {role: 'harvester', pickingUp: true, body: energyCap}});
     };
 
     StructureSpawn.prototype.createAttacker = function(energyCap) {
@@ -172,7 +180,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             body.push(MOVE);
         }
         var newName = 'attacker' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'attacker'}});
+        return this.spawnCreep(body, newName, {memory: {role: 'attacker', body: energyCap}});
     };
 
 
@@ -188,7 +196,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             var targetRoom = Game.map.describeExits(this.room.name)[BOTTOM];
             return this.spawnCreep(body, newName, {memory: {role: 'remoteharvester',
                                                             home: this.room.name,
-                                                            targetRoom: targetRoom}});
+                                                            targetRoom: targetRoom, body: 10000}});
         }
     };
 

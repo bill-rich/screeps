@@ -1,12 +1,15 @@
+var styles = require('styles')
+
 module.exports = class {
   constructor(creep){
     this.creep = creep
   }
     run() {
+        console.log("bill")
         if(this.creep.room.name != this.creep.memory.targetRoom){
             if(this.creep.store[RESOURCE_ENERGY] > 0){
                 // console.log("dropping off");
-                var droppoint = Game.getObjectById('79f9994e9df890c');
+                var droppoint = Game.getObjectById('b7e9be3b4a4f921');
                 if (droppoint) {
                     var energyToTransfer = this.creep.store[RESOURCE_ENERGY];
                     var transfered = this.creep.transfer(droppoint, RESOURCE_ENERGY);
@@ -28,7 +31,7 @@ module.exports = class {
             }
             // we are empty go lookin
             else{
-                // console.log("goin remote");
+                console.log("goin remote");
                 const exitDir = Game.map.findExit(this.creep.room, this.creep.memory.targetRoom);
                 const exit = this.creep.pos.findClosestByRange(exitDir);
                 this.creep.moveTo(exit, {visualizePathStyle: styles.prio,

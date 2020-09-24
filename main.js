@@ -56,7 +56,7 @@ module.exports.loop = function () {
         var miner = new roleUpgrader(creep)
         miner.run(creep)
       }
-      if(creep.memory.role == 'remoteHarvester') {
+      if(creep.memory.role == 'remoteharvester') {
         var miner = new roleRemoteHarvester(creep)
         miner.run(creep)
       }
