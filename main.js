@@ -3,6 +3,7 @@ require('prototype.Creep')
 require('prototype.Spawn')
 require('prototype.pos')
 
+let roleAttacker = require('role.attacker')
 let roleHarvester = require('role.harvester')
 let roleBuilder = require('role.builder')
 let roleMiner = require('role.miner')
@@ -19,6 +20,9 @@ module.exports.loop = function () {
   upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
   for(room in Game.rooms){
     var nroom = Game.rooms[room]
+    if(!nroom.controller.my){
+      continue
+    }
 
     nroom.createRoads()
     spawn = Game.rooms[room].find(FIND_STRUCTURES, {
@@ -59,6 +63,10 @@ module.exports.loop = function () {
       if(creep.memory.role == 'remoteharvester') {
         var miner = new roleRemoteHarvester(creep)
         miner.run(creep)
+      }
+      if(creep.memory.role == 'attacker') {
+        var attacker = new roleAttacker(creep)
+        attacker.run(creep)
       }
     }
   }

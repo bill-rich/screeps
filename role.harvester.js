@@ -36,6 +36,7 @@ module.exports = class {
           for(let t of sortedTargets){
             if(t.structureType != STRUCTURE_CONTAINER) {
               target = t
+              break
             }
           }
           this.creep.memory.target = target.id

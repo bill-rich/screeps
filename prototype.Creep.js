@@ -68,10 +68,17 @@ Creep.prototype.bestEnergySource = function(){
   })
   var containers = this.room.find(FIND_STRUCTURES, {
     filter: (structure) => {
-      return ( structure.structureType == STRUCTURE_CONTAINER)
+      return ( structure.structureType == STRUCTURE_CONTAINER ||
+        structure.structureType == STRUCTURE_STORAGE
+      )
         //structure.store.getUsedCapacity() >= this.creep.store.getFreeCapacity())
         //structure.memory.users.split(";").length <= structure.memory.maxUsers
       //)
+    }
+  })
+  var tombStones = this.room.find(FIND_TOMBSTONES, {
+    filter: (tomb) => {
+      return tomb.store.getUsedCapacity() >= 50
     }
   })
   var openEnergy = this.room.find(FIND_DROPPED_RESOURCES, {
@@ -82,6 +89,10 @@ Creep.prototype.bestEnergySource = function(){
 
   if(openEnergy.length > 0){
     return _.sortBy(openEnergy, energy => this.pos.getRangeTo(energy))[0]
+  }
+
+  if(tombStones.length > 0){
+    return _.sortBy(tombStones, energy => this.pos.getRangeTo(energy))[0]
   }
 
   if(containers.length > 0){
@@ -99,7 +110,26 @@ Creep.prototype.bestEnergySource = function(){
   }
 }
 
+Creep.prototype.selfMaintain = function(){
+  var energyCap = this.room.energyCapacityAvailable
+  if(this.ticksToLive < 250 && this.memory.body >= energyCap){
+    this.memory.renew = true
+  }
+  if(this.ticksToLive >=1400 || this.memory.body < energyCap || this.room.energyAvailable < energyCap * 0.25){
+    this.memory.renew = false
+  }
+  if(this.memory.renew){
+    var spawn = Game.getObjectById(Memory.homespawn)
+    this.say("Getting fixed")
+    this.autoPathTo(spawn)
+    return true
+  }
+}
+
 Creep.prototype.acquireEnergy = function(){
+  if(this.selfMaintain()){
+    return OK
+  }
   if(!this.memory.target){
     let dest = this.bestEnergySource()
     this.memory.target = dest.id
@@ -110,7 +140,7 @@ Creep.prototype.acquireEnergy = function(){
     return
   }
   var result
-  if(dest.structureType){
+  if(dest.store){
     result = this.withdraw(dest, RESOURCE_ENERGY)
   }
   else {
@@ -118,9 +148,9 @@ Creep.prototype.acquireEnergy = function(){
       result = ERR_NOT_IN_RANGE
     } else {
       if(dest.energyCapacity){
-        this.harvest(dest)
+        result = this.harvest(dest)
       } else {
-        this.pickup(dest)
+        result = this.pickup(dest)
       }
     }
   }

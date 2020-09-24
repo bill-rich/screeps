@@ -1,6 +1,7 @@
 var MIN_ATTACKERS = 0
 
 StructureSpawn.prototype.spawn_creeps = function() {
+        Memory.homespawn = this.id
         var sources = this.room.find(FIND_SOURCES).length;
         var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester').length;
         var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder').length;
@@ -28,6 +29,9 @@ StructureSpawn.prototype.spawn_creeps = function() {
 				var wanted_miners = this.room.find(FIND_SOURCES).length
         var wanted_remoteharvesters = 2;
         var wanted_attackers = MIN_ATTACKERS+(2*hostiles);
+        if(Memory.enemyRoom){
+          wanted_attackers = wanted_attackers +2
+        }
 				var wanted_upgraders = 1
 
         var counts_str = ("H:" + harvesters + "/" + wanted_harvesters
@@ -48,10 +52,18 @@ StructureSpawn.prototype.spawn_creeps = function() {
         }
         for(let name in Game.creeps){
           let creep = Game.creeps[name]
-          if(this.pos.getRangeTo(creep.pos) <= 1 && creep.ticksToLive < 1000 && creep.memory.body >= energyCap){
+          let range = this.pos.getRangeTo(creep.pos)
+          if(range <= 1 && creep.memory.suicide == true){
+            this.recycleCreep(creep)
+          }
+          if(range <= 1 && creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250){
             if(this.renewCreep(creep) == OK){
               creep.say("Yay! " + creep.ticksToLive)
             }
+          }
+          if(range <= 1 && energyCap - creep.memory.body > 250 && creep.ticksToLive < 250){
+            creep.say("Oh no!")
+            //this.recycleCreep(creep)
           }
         }
         spawn_counts(this, counts_str);
@@ -75,9 +87,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
         if(attackers < wanted_attackers) {
             return this.createAttacker(energyCap);;
         }
-        if(remoteharvesters < wanted_remoteharvesters) {
-            return this.createRemoteHarvester(energyCap);;
-        }
+        return this.createRemoteHarvester(energyCap);;
         console.log("Nothing to spawn");
         return -2;
     }
@@ -180,7 +190,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             body.push(MOVE);
         }
         var newName = 'attacker' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'attacker', body: energyCap}});
+        return this.spawnCreep(body, newName, {memory: {role: 'attacker', body: energyCap, targetRoom: Memory.enemyRoom}});
     };
 
 
@@ -189,14 +199,36 @@ StructureSpawn.prototype.spawn_creeps = function() {
                     CARRY,CARRY,CARRY,CARRY,
                     MOVE,MOVE,MOVE,MOVE,
                     MOVE,MOVE,MOVE,MOVE];
+        if( energyCap >= 1800){
+          var body = [WORK,WORK,WORK,WORK,
+                      CARRY,CARRY,CARRY,CARRY,
+                      CARRY,CARRY,CARRY,CARRY,
+                      CARRY,CARRY,CARRY,CARRY,
+                      MOVE,MOVE,MOVE,MOVE,
+                      MOVE,MOVE,MOVE,MOVE,
+                      MOVE,MOVE,MOVE,MOVE,
+                      MOVE,MOVE,MOVE,MOVE];
+        }
+
         var newName = 'remoteharvester' + Game.time;
         var exits= Game.map.describeExits(this.room.name);
         if(exits){
             // only not true if simulation I think
-            var targetRoom = Game.map.describeExits(this.room.name)[BOTTOM];
-            return this.spawnCreep(body, newName, {memory: {role: 'remoteharvester',
-                                                            home: this.room.name,
-                                                            targetRoom: targetRoom, body: 10000}});
+            for(let roomDirection in Game.map.describeExits(this.room.name)){
+              var targetRoom = Game.map.describeExits(this.room.name)[roomDirection.toString()]
+              let count = 0
+              for(let name in Game.creeps){
+                if(Game.creeps[name].memory.targetRoom && Game.creeps[name].memory.targetRoom == targetRoom){
+                  count++
+                }
+              }
+              if(count < 2){
+                console.log("WANT TO GO TO:" + targetRoom)
+                return this.spawnCreep(body, newName, {memory: {role: 'remoteharvester',
+                                                                home: this.room.name,
+                                                                targetRoom: targetRoom, body: 10000}});
+              }
+            }
         }
     };
 
