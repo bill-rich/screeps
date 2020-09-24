@@ -42,11 +42,6 @@ module.exports = class {
           this.creep.memory.target = target.id
         }
       }
-      if(!this.creep.memory.target && this.creep.store[RESOURCE_ENERGY] > 0){
-        this.creep.say("⬆")
-        var upgrader = new roleUpgrader(this.creep)
-        upgrader.run()
-      }
       target = Game.getObjectById(this.creep.memory.target)
       if(this.creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
         //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
