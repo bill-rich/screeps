@@ -98,7 +98,7 @@ Creep.prototype.bestEnergySource = function(){
 
   if(containers.length > 0){
     //var sortedContainers = _.sortBy(containers, container => this.pos.getRangeTo(container))
-    var sortedContainers = _.sortBy(containers, container => container.store.getFreeCapacity())
+    var sortedContainers = _.sortBy(containers, container => 1 - container.store.getUsedCapacity()/container.store.getCapacity())
     for(let i in sortedContainers){
       var container = sortedContainers[i]
       if(container.store && container.store.getUsedCapacity() >= this.store.getFreeCapacity()){

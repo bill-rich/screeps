@@ -67,7 +67,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             creep.say("Oh no!")
             this.recycleCreep(creep)
           }
-          if(creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250){
+          if(creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250 && this.room.energyAvailavle > 300){
             if(this.renewCreep(creep) == OK){
               creep.say("Yay! " + creep.ticksToLive)
               break
