@@ -10,16 +10,6 @@ function sourceUsers(source){
     }
     return count
 }
-Creep.prototype.sourceUsers = function(source){
-    let count = 0
-    for(let name in Game.creeps){
-        let creep = Game.creeps[name]
-        if(source && creep.memory.target == source.id){
-            count++
-        }
-    }
-    return count
-}
 
 function autoRepair(creep){
 	if(creep.store[RESOURCE_ENERGY] > 0){
@@ -34,17 +24,6 @@ function autoRepair(creep){
 			var repair_result = creep.repair(damaged[0]);
 		}
 	}
-}
-
-function sourceDrain(source){
-  let energyDrain = 0
-  for(let name in Game.creeps){
-    let creep = Game.creeps[name]
-    if(creep.memory.target == source.id){
-      energyDrain += creep.store.getFreeCapacity()
-    }
-  }
-  return energyDrain
 }
 
 Creep.prototype.movePath = function(){
@@ -81,32 +60,22 @@ Creep.prototype.autoPathTo = function(target){
 
 Creep.prototype.bestEnergySource = function(){
   let maxUsers = 2
-  let sources = []
-  for(let name in Game.rooms){
-    let room = new Room(name)
-    let roomSources = room.find(FIND_SOURCES, {
-      filter: (source) => {
-        return (sourceUsers(source) <= maxUsers &&
-                source.energy > 0)
-      }
-    })
-    sources = sources.concat(roomSources)
-  }
-
-  var containers = []
-  for(let name in Game.rooms){
-    let room = new Room(name)
-    var roomContainers = room.find(FIND_STRUCTURES, {
-      filter: (structure) => {
-        return ((structure.structureType == STRUCTURE_CONTAINER ||
-          structure.structureType == STRUCTURE_STORAGE) &&
-          structure.store.getUsedCapacity() > sourceDrain(structure)
-        )
-      }
-    })
-    containers = containers.concat(roomContainers)
-  }
-
+  var sources = this.room.find(FIND_SOURCES, {
+    filter: (source) => {
+      return (sourceUsers(source) <= maxUsers &&
+              source.energy > 0)
+    }
+  })
+  var containers = this.room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return ( structure.structureType == STRUCTURE_CONTAINER ||
+        structure.structureType == STRUCTURE_STORAGE
+      )
+        //structure.store.getUsedCapacity() >= this.creep.store.getFreeCapacity())
+        //structure.memory.users.split(";").length <= structure.memory.maxUsers
+      //)
+    }
+  })
   var tombStones = this.room.find(FIND_TOMBSTONES, {
     filter: (tomb) => {
       return tomb.store.getUsedCapacity() >= 50

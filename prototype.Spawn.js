@@ -237,8 +237,8 @@ StructureSpawn.prototype.spawn_creeps = function() {
             // only not true if simulation I think
             for(let roomDirection in Game.map.describeExits(this.room.name)){
               var targetRoom = Game.map.describeExits(this.room.name)[roomDirection.toString()]
-              if(targetRoom && Memory.ignoreRooms.include(targetRoom.name)){
-                break
+              if(targetRoom && Memory.ignoreRooms.includes(targetRoom.name)){
+                continue
               }
               let count = 0
               for(let name in Game.creeps){
