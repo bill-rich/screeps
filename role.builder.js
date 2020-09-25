@@ -23,7 +23,7 @@ module.exports = class {
       this.creep.say('build');
     }
     if(!this.creep.memory.target && this.creep.memory.building){
-      var unsortedTargets = this.creep.room.find(FIND_CONSTRUCTION_SITES);
+      var unsortedTargets = Game.constructionSites
       var targets = _.sortBy(unsortedTargets, target => this.creep.pos.getRangeTo(target))
       if(targets.length > 0){
         this.creep.memory.target = targets[0].id

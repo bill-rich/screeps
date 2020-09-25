@@ -9,6 +9,7 @@ let roleBuilder = require('role.builder')
 let roleMiner = require('role.miner')
 let roleUpgrader = require('role.upgrader')
 let roleRemoteHarvester = require('role.remoteharvester')
+let roleClaimer = require('role.claimer')
 let tower = require('tower')
 var styles = require('styles')
 
@@ -30,6 +31,9 @@ module.exports.loop = function () {
         return structure.structureType == STRUCTURE_SPAWN
       }
     })[0]
+    if(!spawn){
+      return
+    }
     spawn.spawn_creeps()
     var towers = nroom.find(FIND_STRUCTURES, {
       filter: (structure) => {
@@ -67,6 +71,10 @@ module.exports.loop = function () {
       if(creep.memory.role == 'attacker') {
         var attacker = new roleAttacker(creep)
         attacker.run(creep)
+      }
+      if(creep.memory.role == 'claimer') {
+        var claimer = new roleClaimer(creep)
+        claimer.run(creep)
       }
     }
   }

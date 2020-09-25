@@ -20,16 +20,21 @@ module.exports = class {
     }
     else {
       if(!this.creep.memory.target && !this.creep.memory.pickingUp){
-        var targets = this.creep.room.find(FIND_STRUCTURES, {
-          filter: (structure) => {
-            return ((structure.structureType == STRUCTURE_EXTENSION ||
-              //structure.structureType == STRUCTURE_CONTAINER ||
-              structure.structureType == STRUCTURE_SPAWN ||
-              structure.structureType == STRUCTURE_TOWER ) &&
-              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-            )
-          }
-        })
+        var targets = []
+        for(let name in Game.rooms){
+          let room = new Room(name)
+          var roomTargets = room.find(FIND_STRUCTURES, {
+            filter: (structure) => {
+              return ((structure.structureType == STRUCTURE_EXTENSION ||
+                //structure.structureType == STRUCTURE_CONTAINER ||
+                structure.structureType == STRUCTURE_SPAWN ||
+                structure.structureType == STRUCTURE_TOWER ) &&
+                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+              )
+            }
+          })
+          targets = targets.concat(roomTargets)
+        }
         if(targets.length > 0) {
           var sortedTargets = _.sortBy(targets, target => this.creep.pos.getRangeTo(target))
           var target = sortedTargets[0]

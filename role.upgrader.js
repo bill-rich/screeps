@@ -13,7 +13,19 @@ module.exports = class {
       this.creep.memory.upgrading = true;
       this.creep.say('upgrade');
     }
-    var target = this.creep.room.controller;
+    let targets = []
+    for(let name in Game.rooms){
+      let room = new Room(name)
+      let controller = room.find(FIND_STRUCTURES, {
+        filter: (struct) => {
+          return struct.structureType == STRUCTURE_CONTROLLER
+        }
+      })[0]
+      //if(room && room.controller.my){
+        targets.push(controller)
+      //}
+    }
+    let target = _.sortBy(targets, controller => this.creep.sourceUsers(controller))[0]
     if(this.creep.memory.upgrading) {
       if(this.creep.upgradeController(target) == ERR_NOT_IN_RANGE) {
         //this.creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}})

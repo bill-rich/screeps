@@ -3,11 +3,12 @@ var MIN_ATTACKERS = 0
 StructureSpawn.prototype.spawn_creeps = function() {
         Memory.homespawn = this.id
         var sources = this.room.find(FIND_SOURCES).length;
-        var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester').length;
-        var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder').length;
-        var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader').length;
-        var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner').length;
-        var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker').length;
+        var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester' && creep.room == this.room).length;
+        var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder' && creep.room == this.room).length;
+        var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader' && creep.room == this.room).length;
+        var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner' && creep.room == this.room).length;
+        var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker' && creep.room == this.room).length;
+        var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.room == this.room).length;
         var remoteharvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'remoteharvester').length;
         var hostiles = this.room.enemyTargets().length;
         if(hostiles){
@@ -32,6 +33,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
 				var wanted_miners = this.room.find(FIND_SOURCES).length
         var wanted_remoteharvesters = 2;
         var wanted_attackers = MIN_ATTACKERS+(2*hostiles);
+        var wanted_claimers = Memory.claimers
         if(Memory.enemyRoom){
           wanted_attackers = wanted_attackers +2
         }
@@ -95,10 +97,15 @@ StructureSpawn.prototype.spawn_creeps = function() {
         if(upgraders < wanted_upgraders) {
             return this.createUpgrader(energyCap);
         }
+        if(claimers < wanted_claimers) {
+            return this.createClaimer(energyCap);
+        }
+
         return this.createRemoteHarvester(energyCap);;
         console.log("Nothing to spawn");
         return -2;
     }
+
 
     StructureSpawn.prototype.createBuilder = function(energyCap) {
         var energyAvailable = this.room.energyAvailable;
@@ -118,6 +125,12 @@ StructureSpawn.prototype.spawn_creeps = function() {
         }
         var newName = 'builder' + Game.time;
         return this.spawnCreep(body, newName, {memory: {role: 'builder', building: true, body: energyCap}});
+    };
+
+    StructureSpawn.prototype.createClaimer = function() {
+        var body = [CLAIM,MOVE];
+        var newName = 'claimer' + Game.time;
+        return this.spawnCreep(body, newName, {memory: {role: 'claimer'}});
     };
 
     StructureSpawn.prototype.createUpgrader = function(energyCap) {
@@ -224,6 +237,9 @@ StructureSpawn.prototype.spawn_creeps = function() {
             // only not true if simulation I think
             for(let roomDirection in Game.map.describeExits(this.room.name)){
               var targetRoom = Game.map.describeExits(this.room.name)[roomDirection.toString()]
+              if(targetRoom && Memory.ignoreRooms.include(targetRoom.name)){
+                break
+              }
               let count = 0
               for(let name in Game.creeps){
                 if(Game.creeps[name].memory.targetRoom && Game.creeps[name].memory.targetRoom == targetRoom){
