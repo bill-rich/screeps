@@ -78,7 +78,7 @@ Creep.prototype.bestEnergySource = function(){
   })
   var tombStones = this.room.find(FIND_TOMBSTONES, {
     filter: (tomb) => {
-      return tomb.store.getUsedCapacity() >= 50
+      return tomb.store.getUsedCapacity() >= 100
     }
   })
   var openEnergy = this.room.find(FIND_DROPPED_RESOURCES, {
@@ -114,16 +114,17 @@ Creep.prototype.bestEnergySource = function(){
 
 Creep.prototype.selfMaintain = function(){
   var spawn = Game.getObjectById(Memory.homespawn)
-  var energyCap = spawn.room.energyCapacityAvailable
-  if(this.ticksToLive < 250 && this.memory.body >= energyCap){
+  var energyCap = this.room.energyCapacityAvailable
+  if(this.ticksToLive < 250 && this.memory.body >= energyCap && energyCap > 300){
     this.memory.renew = true
   }
-  if(this.ticksToLive >=1400 || this.memory.body < energyCap || this.room.energyAvailable < energyCap * 0.25 || spawn.spawning){
+  if(this.ticksToLive >=1400 || this.memory.body < energyCap || this.room.energyAvailable < energyCap * 0.25){
     this.memory.renew = false
   }
   if(this.memory.renew){
     this.say("🔧")
-    this.autoPathTo(spawn)
+    //this.autoPathTo(spawn)
+    this.moveTo(spawn)
     return true
   }
 }
