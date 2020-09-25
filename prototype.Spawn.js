@@ -69,7 +69,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
             creep.say("Oh no!")
             this.recycleCreep(creep)
           }
-          if(creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250 && this.room.energyAvailavle > 300){
+          if(creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250 && this.room.energyAvailable > 300){
             if(this.renewCreep(creep) == OK){
               creep.say("Yay! " + creep.ticksToLive)
               break
@@ -116,7 +116,7 @@ StructureSpawn.prototype.spawn_creeps = function() {
         }
         // always make [work, carry, move]*X which costs 200 per x
         // don't make workers bigger than size 4 for now
-        var bodySize = Math.min(Math.floor(energyAvailable / 200), 4);
+        var bodySize = Math.min(Math.floor(energyAvailable / 200));
         var body = [];
         for(let i=0; i<bodySize; i++){
             body.push(WORK);
