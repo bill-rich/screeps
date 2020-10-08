@@ -1,82 +1,101 @@
-require('prototype.Room')
-require('prototype.Creep')
-require('prototype.Spawn')
+//require('util.functions')
+//require('prototype.Spawn')
 require('prototype.pos')
-
-let roleAttacker = require('role.attacker')
-let roleHarvester = require('role.harvester')
-let roleBuilder = require('role.builder')
-let roleMiner = require('role.miner')
-let roleUpgrader = require('role.upgrader')
-let roleRemoteHarvester = require('role.remoteharvester')
-let roleClaimer = require('role.claimer')
+require('prototype.Room')
+require('prototype.Resource')
+require('prototype.Source')
+require('prototype.RoomObject')
+require('prototype.Spawn')
+require('prototype.ConstructionSite')
+require('prototype.Creep')
+require('prototype.Structure')
 let tower = require('tower')
-var styles = require('styles')
+let styles = require('styles')
 
 module.exports.loop = function () {
-  var room, harvesters, spawn, builders, miners, upgraders
-  harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-  builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
-  miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner');
-  upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-  for(room in Game.rooms){
-    var nroom = Game.rooms[room]
-    if(!nroom.controller.my){
-      continue
-    }
+  
+  pruneMemory()
+  setUpMemory()
 
-    nroom.createRoads()
-    spawn = Game.rooms[room].find(FIND_STRUCTURES, {
-      filter: (structure) => {
-        return structure.structureType == STRUCTURE_SPAWN
-      }
-    })[0]
-    if(!spawn){
-      return
-    }
-    spawn.spawn_creeps()
-    var towers = nroom.find(FIND_STRUCTURES, {
+  clearTowQueue()
+  spawnTasks()
+  creepTasks()
+
+  roomTasks()
+  towerTasks()
+
+}
+
+
+function roomTasks(){
+  for(let room of _.values(Game.rooms)){
+    room.buildExtensions()
+    room.createRoads()
+  }
+}
+
+function towerTasks(){
+  _.forEach(_.values(Game.rooms), function(room){
+    _.forEach(room.find(FIND_STRUCTURES, {
       filter: (structure) => {
         return structure.structureType == STRUCTURE_TOWER
       }
-    })
-
-    for(let t of towers){
+    }), function(t){
       let towerObj = new tower(t)
       towerObj.run()
-    }
-    
-    for(var name in Game.creeps) {
-      var creep = Game.creeps[name]
-      if(creep.memory.role == 'harvester') {
-        var harvester = new roleHarvester(creep)
-        harvester.run(creep)
-      }
-      if(creep.memory.role == 'builder') {
-        var builder = new roleBuilder(creep)
-        builder.run(creep)
-      }
-      if(creep.memory.role == 'miner') {
-        var miner = new roleMiner(creep)
-        miner.run(creep)
-      }
-      if(creep.memory.role == 'upgrader') {
-        var miner = new roleUpgrader(creep)
-        miner.run(creep)
-      }
-      if(creep.memory.role == 'remoteharvester') {
-        var miner = new roleRemoteHarvester(creep)
-        miner.run(creep)
-      }
-      if(creep.memory.role == 'attacker') {
-        var attacker = new roleAttacker(creep)
-        attacker.run(creep)
-      }
-      if(creep.memory.role == 'claimer') {
-        var claimer = new roleClaimer(creep)
-        claimer.run(creep)
-      }
+    })
+  })
+}
+
+function clearTowQueue(){
+  Memory.towQueue = {}
+}
+
+function creepTasks(){
+  for(let creepType in CREEP_TYPES){
+    let genCreep = new CREEP_TYPES[creepType]["object"]()
+    for(let creep of genCreep.find()){
+      let creepModel = new CREEP_TYPES[creepType]["object"](creep)
+      creepModel.run()
     }
   }
 }
 
+function spawnTasks(){
+  let bestSpawn = _.first(_.sortBy(_.values(Game.spawns), s => s.level))
+  _.forEach(Game.spawns, spawn => {
+    spawn.spawnInfo()
+    if(spawn.id == bestSpawn.id){
+      let result = spawn.spawnCreeps() 
+      if(result != OK){
+        console.log("Error Spawning: " + result)
+      }
+    }
+  })
+}
+
+function pruneMemory(){
+  _.forEach(Memory.creeps, (memCreep, key) => {
+    if(!Game.creeps[key]){
+      console.log("deleting:" + key)
+      delete Memory.creeps[key]
+    }
+  })
+}
+
+function setUpMemory() {
+  let memoryArrays = [ "ignoreRoom", "enemyRoom", "allies", "spawnQueue" ]
+  let memoryObjects = [ "sources", "towQueue", "structures" ]
+
+  memoryArrays.forEach(memItem => {
+    if(Memory[memItem] === undefined){
+      Memory[memItem] = []
+    }
+  })
+
+  memoryObjects.forEach(memItem => {
+    if(Memory[memItem] === undefined){
+      Memory[memItem] = {}
+    }
+  })
+}

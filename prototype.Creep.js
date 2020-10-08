@@ -1,3 +1,5 @@
+let styles = require('styles')
+
 var DO_NOT_REPAIR = [STRUCTURE_WALL];
 
 function sourceUsers(source){
@@ -24,6 +26,37 @@ function autoRepair(creep){
 			var repair_result = creep.repair(damaged[0]);
 		}
 	}
+}
+
+Creep.prototype.targeted = function() {
+  let targetList = []
+  _.forEach(Memory.creeps, (creep, id) => {
+    if(creep.target == this.id){
+      targetList.push(Game.creeps[id])
+    }
+  })
+  return targetList
+}
+
+Object.defineProperty(Creep.prototype, 'netEnergy', {
+	get: function() {
+    return this.store.getUsedCapacity(RESOURCE_ENERGY)
+	},
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperty(Creep.prototype, 'energyCapacity', {
+	get: function() {
+    return this.store.getFreeCapacity(RESOURCE_ENERGY)
+	},
+	enumerable: false,
+	configurable: true
+});
+
+Creep.prototype.get = function(target){
+  if(target.amount){ return this.pickup(target)}
+  if(target.store){ return this.withdraw(target, RESOURCE_ENERGY)}
 }
 
 Creep.prototype.movePath = function(){
@@ -58,57 +91,27 @@ Creep.prototype.autoPathTo = function(target){
   return ERR_NOT_FOUND
 }
 
-Creep.prototype.bestEnergySource = function(){
-  let maxUsers = 2
-  var sources = this.room.find(FIND_SOURCES, {
-    filter: (source) => {
-      return (sourceUsers(source) <= maxUsers &&
-              source.energy > 0)
-    }
-  })
-  var containers = this.room.find(FIND_STRUCTURES, {
-    filter: (structure) => {
-      return ( structure.structureType == STRUCTURE_CONTAINER ||
-        structure.structureType == STRUCTURE_STORAGE
-      )
-        //structure.store.getUsedCapacity() >= this.creep.store.getFreeCapacity())
-        //structure.memory.users.split(";").length <= structure.memory.maxUsers
-      //)
-    }
-  })
-  var tombStones = this.room.find(FIND_TOMBSTONES, {
-    filter: (tomb) => {
-      return tomb.store.getUsedCapacity() >= 100
-    }
-  })
-  var openEnergy = this.room.find(FIND_DROPPED_RESOURCES, {
-    filter: (energy) => {
-        return ( energy.amount >= 100 &&
-                 sourceUsers(energy) <= maxUsers)
-    }
-  })
+Creep.prototype.bestEnergySource = function(capacity){
+  let sources = this.room.allEnergy()
 
-  if(openEnergy.length > 0){
-    return _.sortBy(openEnergy, energy => this.pos.getRangeTo(energy))[0]
+  let volitile = []
+  let stable = []
+  let storages = []
+  _.forEach(Game.rooms, function(room, key){
+    let roomEnergy = room.allEnergy()
+    volitile = volitile.concat(roomEnergy.volitile)
+    stable = stable.concat(roomEnergy.stable)
+    storages = storages.concat(roomEnergy.storage)
+  })
+  for(let sources of [volitile, stable, storages]){
+    let validSources = _.filter(sources, function(s){ return s.netEnergy > capacity})
+    if(validSources.length == 0){ continue }
+    return _.sortBy(validSources, s => this.pos.getRangeTo(s.pos))[0]
   }
-
-  if(tombStones.length > 0){
-    return _.sortBy(tombStones, energy => this.pos.getRangeTo(energy))[0]
-  }
-
-  if(containers.length > 0){
-    //var sortedContainers = _.sortBy(containers, container => this.pos.getRangeTo(container))
-    var sortedContainers = _.sortBy(containers, container => 1 - container.store.getUsedCapacity()/container.store.getCapacity())
-    for(let i in sortedContainers){
-      var container = sortedContainers[i]
-      if(container.store && container.store.getUsedCapacity() >= this.store.getFreeCapacity()){
-        return container
-      }
-    }
-  }
-
-  if(sources.length > 0){
-    return _.sortBy(sources, source => this.pos.getRangeTo(source))[0]
+  for(let sources of [volitile, stable, storages]){
+    let validSources = _.filter(sources, function(s){ return s.netEnergy > capacity})
+    if(validSources.length == 0){ continue }
+    return _.sortBy(validSources, s => 0 - s.netEnergy)[0]
   }
 }
 
@@ -125,6 +128,7 @@ Creep.prototype.selfMaintain = function(){
     this.say("🔧")
     //this.autoPathTo(spawn)
     this.moveTo(spawn)
+    spawn.renew(this)
     return true
   }
 }
@@ -134,7 +138,7 @@ Creep.prototype.acquireEnergy = function(){
     return OK
   }
   if(!this.memory.target){
-    let dest = this.bestEnergySource()
+    let dest = this.bestEnergySource(this.energyCapacity)
     if(!dest){
       return
     }
@@ -161,7 +165,7 @@ Creep.prototype.acquireEnergy = function(){
     }
   }
   if(result == ERR_NOT_IN_RANGE) {
-    this.autoPathTo(dest, {visualizePathStyle: {stroke: '#ffaa00'}})
+    this.moveTo(dest, {visualizePathStyle: styles.collect})
   }
   if(result == ERR_NOT_ENOUGH_ENERGY) {
     this.memory.target = ""

@@ -1,304 +1,124 @@
+var roleMiner  = require('role.miner')
+var roleWorker = require('role.worker')
+var roleTransport = require('role.transport')
+var roleScout = require('role.scout')
+
+global.miner =  new roleMiner()
+global.worker = new roleWorker()
+global.transport = new roleTransport()
+global.scout = new roleScout()
+
+
 var MIN_ATTACKERS = 0
 
-StructureSpawn.prototype.spawn_creeps = function() {
-        Memory.homespawn = this.id
-        var sources = this.room.find(FIND_SOURCES).length;
-        var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester' && creep.room == this.room).length;
-        var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder' && creep.room == this.room).length;
-        var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader' && creep.room == this.room).length;
-        var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner' && creep.room == this.room).length;
-        var attackers = _.filter(Game.creeps, (creep) => creep.memory.role == 'attacker' && creep.room == this.room).length;
-        var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.room == this.room).length;
-        var remoteharvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'remoteharvester').length;
-        var hostiles = this.room.enemyTargets().length;
-        if(hostiles){
-          Memory.enemyRoom = this.room.name
-        }
-
-        var storedEnergy = 0;
-        if(this.room.storage){
-            storedEnergy = this.room.storage.store[RESOURCE_ENERGY];
-        }
-        var containers = this.room.find(FIND_STRUCTURES).filter(
-            struct => struct.structureType == STRUCTURE_CONTAINER
-        );
-        var containedEnergy = containers.reduce(
-            ( accumulator, struct ) => accumulator + struct.store[RESOURCE_ENERGY],
-            0
-        );
-
-        var wanted_harvesters = needed_harvs(this.room);
-        var wanted_builders = wanted_harvesters + Math.floor((storedEnergy + containedEnergy) / (300 * this.room.controller.level));
-        var wanted_builders = wanted_builders + Math.floor(storedEnergy / 5000);
-				var wanted_miners = this.room.find(FIND_SOURCES).length
-        var wanted_remoteharvesters = 2;
-        var wanted_attackers = MIN_ATTACKERS+(2*hostiles);
-        var wanted_claimers = Memory.claimers
-        if(Memory.enemyRoom){
-          wanted_attackers = wanted_attackers +2
-        }
-				var wanted_upgraders = 1
-
-        var counts_str = ("H:" + harvesters + "/" + wanted_harvesters
-                          + " B:" + builders+ "/" + wanted_builders
-                          + " M:" + miners + "/" + wanted_miners
-                          + " R:" + remoteharvesters + "/" + wanted_remoteharvesters
-                          + " U:" + upgraders + "/" + wanted_upgraders
-                          + " A:" + attackers + "/" + wanted_attackers
-                          + " E:" + (storedEnergy + containedEnergy)
-                         );
-
-        var energyAvailable = this.room.energyAvailable;
-        var energyCap = this.room.energyCapacityAvailable;
-        if(Object.values(Game.creeps).length < 3){
-            // not many creeps. lets error on being an early room and just use 300
-            console.log("fail over, report low cap:" + this.room.energyAvailable);
-            energyCap = this.room.energyAvailable;
-        }
-        let creeps = this.room.find(FIND_MY_CREEPS, {
-          filter: (creep) => {
-            return this.pos.getRangeTo(creep.pos) <= 1
-          }
-        })
-        let sortedCreeps = _.sortBy(creeps, creep => 1600 - creep.ticksToLive)
-        for(let creep of sortedCreeps){
-          if(creep.memory.suicide == true){
-            this.recycleCreep(creep)
-          }
-          if(energyCap - creep.memory.body >= 250 && creep.ticksToLive < 250){
-            creep.say("Oh no!")
-            this.recycleCreep(creep)
-          }
-          if(creep.ticksToLive < 1510 && energyCap - creep.memory.body < 250 && this.room.energyAvailable > 300){
-            if(this.renewCreep(creep) == OK){
-              creep.say("Yay! " + creep.ticksToLive)
-              break
-            }
-          }
-        }
-        spawn_counts(this, counts_str);
-        spawn_info(this, energyAvailable, energyCap);
-        if(this.spawning){
-            //busy
-            return -1;
-        }
-        if(harvesters < wanted_harvesters) {
-            return this.createHarvester(energyCap);
-        }
-        if(attackers < wanted_attackers) {
-            return this.createAttacker(energyCap);;
-        }
-        if(miners < wanted_miners) {
-            return this.createMiner(energyCap);
-        }
-        if(builders < wanted_builders) {
-            return this.createBuilder(energyCap);
-        }
-        if(upgraders < wanted_upgraders) {
-            return this.createUpgrader(energyCap);
-        }
-        if(claimers < wanted_claimers) {
-            return this.createClaimer(energyCap);
-        }
-
-        return this.createRemoteHarvester(energyCap);;
-        console.log("Nothing to spawn");
-        return -2;
-    }
-
-
-    StructureSpawn.prototype.createBuilder = function(energyCap) {
-        var energyAvailable = this.room.energyAvailable;
-
-        if(energyAvailable < energyCap){
-            //lets wait to make workers
-            return ERR_NOT_ENOUGH_ENERGY;
-        }
-        // always make [work, carry, move]*X which costs 200 per x
-        // don't make workers bigger than size 4 for now
-        var bodySize = Math.min(Math.floor(energyAvailable / 200));
-        var body = [];
-        for(let i=0; i<bodySize; i++){
-            body.push(WORK);
-            body.push(CARRY);
-            body.push(MOVE);
-        }
-        var newName = 'builder' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'builder', building: true, body: energyCap}});
-    };
-
-    StructureSpawn.prototype.createClaimer = function() {
-        var body = [CLAIM,MOVE];
-        var newName = 'claimer' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'claimer'}});
-    };
-
-    StructureSpawn.prototype.createUpgrader = function(energyCap) {
-        var energyAvailable = this.room.energyAvailable;
-
-        if(energyAvailable < energyCap){
-            //lets wait to make upgraders
-            return ERR_NOT_ENOUGH_ENERGY;
-        }
-        // always make [work,work, carry, move]*X which costs 200 per x
-        // don't make upgraders bigger than size 4 for now
-        var bodySize = Math.min(Math.floor(energyAvailable / 200), 4);
-        var body = [];
-        for(let i=0; i<bodySize; i++){
-            body.push(WORK);
-            body.push(CARRY);
-            body.push(MOVE);
-        }
-        var newName = 'upgrader' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'upgrader', body: energyCap}});
-    };
-
-    StructureSpawn.prototype.createMiner = function(energyCap) {
-
-        var body = [WORK,WORK,CARRY,MOVE];
-        if( energyCap >= 450 ){
-            body = [WORK,WORK,WORK,CARRY,MOVE,MOVE];
-        }
-        if( energyCap >= 550 ){
-            body = [WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE];
-        }
-        if( energyCap > 700 ){
-            body = [WORK,WORK,WORK,WORK,WORK,CARRY,MOVE,MOVE,MOVE];
-        }
-        console.log("ecap" + energyCap + "spawning harv" + body);
-        var newName = 'Miner' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'miner', body: energyCap}});
-    };
-
-    StructureSpawn.prototype.createHarvester = function(energyCap) {
-        var energyAvailable = this.room.energyAvailable;
-
-        if(energyAvailable < energyCap || energyAvailable < 300){
-            //lets wait to make janitors
-            return ERR_NOT_ENOUGH_ENERGY;
-        }
-        // always make [carry, carry, move]*X which costs 200 per x
-        // don't make janitors bigger than size 10 for now
-        var bodySize = Math.min(Math.floor((energyAvailable) / 300), 10);
-        var body = [];
-        for(let i=0; i<bodySize; i++){
-            body.push(WORK);
-            body.push(CARRY);
-            body.push(CARRY);
-            body.push(MOVE);
-            body.push(MOVE);
-        }
-        var newName = 'Harvester' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'harvester', pickingUp: true, body: energyCap}});
-    };
-
-    StructureSpawn.prototype.createAttacker = function(energyCap) {
-        var energyAvailable = this.room.energyAvailable;
-
-        if(energyAvailable < energyCap){
-            //lets wait to make attackers
-            return ERR_NOT_ENOUGH_ENERGY;
-        }
-        // always make [attack, tough, move, move]*X which costs 190 per x
-        // don't make attackers bigger than size 4 for now
-        // and only use half available
-        var bodySize = Math.min(Math.floor(energyAvailable / 190));
-        var body = [];
-        for(let i=0; i<bodySize; i++){
-            body.push(ATTACK);
-            body.push(TOUGH);
-            body.push(MOVE);
-            body.push(MOVE);
-        }
-        var newName = 'attacker' + Game.time;
-        return this.spawnCreep(body, newName, {memory: {role: 'attacker', body: energyCap, targetRoom: Memory.enemyRoom}});
-    };
-
-
-    StructureSpawn.prototype.createRemoteHarvester = function(energyCap) {
-        var body = [WORK,WORK,WORK,WORK,
-                    CARRY,CARRY,CARRY,CARRY,
-                    MOVE,MOVE,MOVE,MOVE,
-                    MOVE,MOVE,MOVE,MOVE];
-        if( energyCap >= 1800){
-          var body = [WORK,WORK,WORK,WORK,
-                      CARRY,CARRY,CARRY,CARRY,
-                      CARRY,CARRY,CARRY,CARRY,
-                      CARRY,CARRY,CARRY,CARRY,
-                      MOVE,MOVE,MOVE,MOVE,
-                      MOVE,MOVE,MOVE,MOVE,
-                      MOVE,MOVE,MOVE,MOVE,
-                      MOVE,MOVE,MOVE,MOVE];
-        }
-
-        var newName = 'remoteharvester' + Game.time;
-        var exits= Game.map.describeExits(this.room.name);
-        if(exits){
-            // only not true if simulation I think
-            for(let roomDirection in Game.map.describeExits(this.room.name)){
-              var targetRoom = Game.map.describeExits(this.room.name)[roomDirection.toString()]
-              if(targetRoom && Memory.ignoreRooms.includes(targetRoom)){
-                continue
-              }
-              let count = 0
-              for(let name in Game.creeps){
-                if(Game.creeps[name].memory.targetRoom && Game.creeps[name].memory.targetRoom == targetRoom){
-                  count++
-                }
-              }
-              let targetRoomSources = ""
-              try {
-                targetRoomSources = new Room(targetRoom).find(FIND_SOURCES)
-              } catch {
-                targetRoomSources = [ "unknown" ]
-              }
-
-              if(count < 2 * targetRoomSources.length){
-                console.log("WANT TO GO TO:" + targetRoom)
-                return this.spawnCreep(body, newName, {memory: {role: 'remoteharvester',
-                                                                home: this.room.name,
-                                                                targetRoom: targetRoom, body: 10000}});
-              }
-            }
-        }
-    };
-
-
-
-function needed_harvs(room){
-    let sources = room.find(FIND_SOURCES);
-    let count = 0;
-    for(let s of sources){
-        for(let p of s.pos.adjacent()){
-            if(p.canBuild()){
-                count+=1;
-            }
-        }
-    }
-    //return count
-    return Math.floor(count/2);
+global.CREEP_TYPES = {
+  miner: {
+    body          : [MOVE,WORK],
+    maxMultiplier : 5,
+    memory        : { role: "miner" },
+    object        : roleMiner
+  },
+  worker: {
+    body          : [MOVE,WORK,CARRY],
+    maxMultiplier : 9999,
+    memory        : { role: "worker" },
+    object        : roleWorker
+  },
+  transport: {
+    body          : [MOVE,CARRY,CARRY],
+    maxMultiplier : 9999,
+    memory        : { role: "transport" },
+    object        : roleTransport
+  },
+  scout: {
+    body          : [MOVE,CLAIM],
+    maxMultiplier : 2,
+    memory        : { role: "scout" },
+    object        : roleScout
+  },
 }
 
-function spawn_info(myspawn, availible_energy, energyCap){
-    var infostr;
-    if(myspawn.spawning) {
-        var spawningCreep = Game.creeps[myspawn.spawning.name];
-        infostr = '🛠️' + spawningCreep.memory.role;
+StructureSpawn.prototype.spawnCreeps = function() {
+  let finalResult = OK
+  for(let creepType in CREEP_TYPES){
+    try{
+      let result = this.spawn(creepType) 
+      if(result != OK){
+        finalResult = result
+      } else {
+        break
+      }
+    } catch(err){
+      console.log(err)
     }
-    else{
-        infostr = "🔋" + availible_energy + "/" +energyCap;
-    }
-    myspawn.room.visual.text(
-        infostr,
-        myspawn.pos.x - 1,
-        myspawn.pos.y,
-        {align: 'right', opacity: 0.8});
+  }
+  return finalResult
+}
+StructureSpawn.prototype.spawnInfo = function(){
+  var infostr;
+  if(this.spawning) {
+    var spawningCreep = Game.creeps[this.spawning.name];
+    infostr = '🛠️' + spawningCreep.memory.role;
+  }
+  else{
+    infostr = "🔋" + this.room.energyAvailable + "/" + this.room.energyCapacityAvailable
+  }
+  this.room.visual.text(
+    infostr,
+    this.pos.x - 1,
+    this.pos.y,
+    {align: 'right', opacity: 0.8});
 }
 
-function spawn_counts(myspawn, counts_str){
-    myspawn.room.visual.text(
-        counts_str,
-        myspawn.pos.x,
-        myspawn.pos.y+1.5,
-        {align: 'center', opacity: 0.8});
+StructureSpawn.prototype.creepCost = function(body){
+    let cost = 0
+    for(let part of body){
+      cost += BODYPART_COST[part]
+    }
+    return cost
+  }
+
+StructureSpawn.prototype.spawn = function(creepType) {
+//  // TODO: Improve queueing
+  if(this.spawning){
+    return OK
+  }
+  _.forEach( CREEP_TYPES, (value, key, map) => {
+    let creepType = new value["object"]()
+    if(creepType.find().length + Memory.spawnQueue.filter(queue => queue == key) < creepType.wanted()){
+      console.log("adding "+ key +" to the queue")
+      Memory.spawnQueue.push(key)
+    }
+  })
+  if(Memory.spawnQueue.length > 0){
+    creepType = Memory.spawnQueue.shift()
+    let energyAvailable = this.room.energyAvailable
+    let energyCapacity  = this.room.energyCapacityAvailable
+    let bodyUnit        = CREEP_TYPES[creepType]["body"]
+    let bodyUnitCost    = this.creepCost(bodyUnit)
+    let bodyMax         = CREEP_TYPES[creepType]["maxMultiplier"]
+    let bodyMultiplier  = Math.min(Math.floor(energyCapacity/bodyUnitCost), bodyMax)
+    let memory          = CREEP_TYPES[creepType]["memory"]
+    let name            = creepType + Game.time
+
+    if(transport.find().length == 0 || miner.find().length == 0){
+      energyCapacity = 300
+    }
+    let body = []
+    for(let i=1; i <= bodyMultiplier; i++){
+      body = body.concat(bodyUnit)
+      if(this.creepCost(body) + bodyUnitCost > energyCapacity){
+        break
+      }
+    }
+    if(this.creepCost(body) > energyAvailable) {
+      Memory.spawnQueue.unshift(creepType)
+      return OK
+    }
+    console.log("spawning " + name)
+    return this.spawnCreep(body, name, { memory: memory })
+  }
+  return OK
 }
+
+

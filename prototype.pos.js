@@ -23,6 +23,10 @@ RoomPosition.prototype.adjacent = function() {
         return this.diagonals().concat(this.cardinals());
 };
 
+RoomPosition.prototype.occupied = function() {
+        return this.findInRange(FIND_CREEPS, 0).length > 0 || !this.canBuild()
+};
+
 RoomPosition.prototype.canBuild = function() {
         let isWall = this.lookFor(LOOK_TERRAIN)[0] == 'wall';
         let hasBlockingStruct = this.lookFor(LOOK_STRUCTURES).filter(s => OBSTACLE_OBJECT_TYPES.includes(s.structureType)).length > 0;
