@@ -30,12 +30,12 @@ global.CREEP_TYPES = {
     memory        : { role: "transport" },
     object        : roleTransport
   },
-  //scout: {
-  //  body          : [MOVE,CLAIM],
-  //  maxMultiplier : 2,
-  //  memory        : { role: "scout" },
-  //  object        : roleScout
-  //},
+  scout: {
+    body          : [MOVE,CLAIM],
+    maxMultiplier : 2,
+    memory        : { role: "scout" },
+    object        : roleScout
+  },
 }
 
 StructureSpawn.prototype.spawnCreeps = function() {

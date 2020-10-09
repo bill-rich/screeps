@@ -16,7 +16,6 @@ module.exports = class {
   }
 
   wanted(){
-    return 0
     let rooms = _.values(Game.rooms)[0].adjacentRooms()
     return _.unique(rooms).length
   }
@@ -38,6 +37,10 @@ module.exports = class {
     }
     if(this.creep.room.name != this.creep.memory.target && this.creep.room.name != this.creep.memory.home){
       let room = Game.rooms[this.creep.memory.home]
+      if(!room.controller){
+        //console.log("No controller in room " + room.name)
+        return
+      }
       this.creep.moveTo(room.controller.pos)
       return
     }
@@ -49,7 +52,8 @@ module.exports = class {
     }
     if(this.creep.room.name == this.creep.memory.target){
       let room = Game.rooms[this.creep.memory.target]
-      if(Game.gcl > _.filter(_.values(Game.rooms), function(r){ return r.controller.my })){
+      let controllers =_.filter(_.values(Game.rooms), function(r){ return (r.controller && r.controller.my) })
+      if(Game.gcl > controllers.length){
         if(this.creep.claimController(room.controller) == ERR_NOT_IN_RANGE){
           this.creep.moveTo(room.controller)
         }

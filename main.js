@@ -34,6 +34,7 @@ module.exports.loop = function () {
     }
   }
 
+  creepTasks()
   spawnTasks()
   createTasks()
   runTasks()
@@ -108,11 +109,14 @@ function transportTasks(){
   let delLow = generatePossibleTasks(allEnergy.storage, deliverers, "deposit", 1000)
   let transfers = generatePossibleTasks(recievers, deliverers, "deposit", 10000)
 
-  return sortCapacityTasks([...high, ...medium, ...low, ...delHigh, ...delLow, ...transfers])
+  //return sortCapacityTasks([...high, ...medium, ...low, ...delHigh, ...delLow, ...transfers])
+  let standardTasks = sortCapacityTasks([...high, ...medium, ...low, ...delLow, ...transfers])
+  let highTasks = sortCapacityTasks([...delHigh])
+  return uniqueTaskTargets([...highTasks, ...standardTasks])
 }
 
 function uniqueTaskTargets(taskList){
-  _.uniqueBy(taskList, function(task){
+  return _.unique(taskList, function(task){
     return task.target
   })
 }
@@ -143,7 +147,7 @@ function workerTasks() {
   })
   let conSites = _.values(Game.constructionSites)
   let controllers = _.reduce(Game.rooms, function (acc, val, key){
-    if(val.controller.my){
+    if(val && val.controller && val.controller.my){
       acc.push(val.controller)
     }
     return acc
@@ -153,10 +157,11 @@ function workerTasks() {
   allOptions = allOptions.concat(generatePossibleTasks(allEnergy.volitile, pickers, "pickup"))
   allOptions = allOptions.concat(generatePossibleTasks(allEnergy.stable, pickers, "pickup"))
   allOptions = allOptions.concat(generatePossibleTasks(allEnergy.storage, pickers, "pickup"))
-  allOptions = allOptions.concat(generatePossibleTasks(conSites, builders, "work"))
   allOptions = allOptions.concat(generatePossibleTasks(controllers, builders, "work"))
+  let highTasks = generatePossibleTasks(conSites, builders, "work", 0.5)
 
-  return sortCapacityTasks(allOptions, 0.5)
+  let standardTasks = sortCapacityTasks([...allOptions, ...highTasks], 0.5)
+  return uniqueTaskTargets([...highTasks, ...standardTasks])
 }
 
 function miningTasks(){
@@ -182,7 +187,7 @@ function miningTasks(){
       }
     })
     let target = genRoom.getObject(task.target)
-    if(task.type == "harvest" && container.length > 0 && !target.pos.isEqualTo(container[0].pos)){
+    if(task.type == "harvest" && container.length > 0 && target && !target.pos.isEqualTo(container[0].pos)){
       task.dest = container[0].id
       task.type = "move"
     }
@@ -256,10 +261,11 @@ function clearTowQueue(){
 }
 
 function creepTasks(){
-  for(let creepType in CREEP_TYPES){
-    let genCreep = new CREEP_TYPES[creepType]["object"]()
+  for(let creepType in ['scout']){
+    let genCreep = new CREEP_TYPES['scout']["object"]()
+    //let genCreep = new CREEP_TYPES[creepType]["object"]()
     for(let creep of genCreep.find()){
-      let creepModel = new CREEP_TYPES[creepType]["object"](creep)
+      let creepModel = new CREEP_TYPES['scout']["object"](creep)
       creepModel.run()
     }
   }

@@ -24,6 +24,9 @@ Room.prototype.allStorage = function(){
 }
 
 Room.prototype.getObject = function(identifier){
+  if(!identifier){
+    return OK
+  }
   if(identifier.x){
     return new RoomPosition(identifier.x, identifier.y, identifier.roomName)
   }
@@ -116,7 +119,7 @@ Room.prototype.allEnergy = function(minEnergy=1){
 }
 
 Room.prototype.createRoads = function(){
-  if(this.controller.level < 2){
+  if(this.controller && this.controller.level < 2){
     return OK
   }
   if(_.values(Game.constructionSites).length > 0){
@@ -205,12 +208,12 @@ Room.prototype.buildExtensions = function(){
     var level = controller.level;
     if(!level){return;}
     var allowed_extensions = CONTROLLER_STRUCTURES[structureType][level];
-    var extensions = this.find(FIND_STRUCTURES,{filter: {structureType: structureType}});
+    var extensions = this.find(FIND_STRUCTURES,{filter: {structureType: STRUCTURE_EXTENSION}});
     var extensions_pending = this.find(FIND_CONSTRUCTION_SITES,{filter: {structureType: structureType}}).length;
 
-    if(extensions_pending < 1 && allowed_extensions > extensions.length){
-      this.placeNextBestExtension(extensions, structureType);
-      return
+    //if(extensions_pending < 1 && allowed_extensions > extensions.length){
+    if(extensions_pending < 1){
+      this.placeNextBestExtension(extensions, structureType)
     }
   }
 
@@ -241,5 +244,6 @@ Room.prototype.placeNextBestExtension = function(extensions, structureType){
   if(myspawns[0]){
     const selected = candidates[Math.floor(Math.random()*candidates.length)];
     const created =  this.createConstructionSite(selected, structureType);
+    return created
   }
 }

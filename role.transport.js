@@ -15,7 +15,7 @@ module.exports = class {
 
   wanted(){
     //return 3
-    return globalWorker.find().length + _.values(genRoom.allSources()).length * 2
+    return globalWorker.find().length + globalMiner.find().length * 2
   }
 
   run(){
