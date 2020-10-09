@@ -29,3 +29,44 @@ Object.defineProperty(Resource.prototype, 'netEnergy', {
 	enumerable: false,
 	configurable: true
 });
+
+Object.defineProperty(Resource.prototype, 'stored', {
+	get: function() {
+    return this.amount
+	},
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperty(Resource.prototype, 'capacity', {
+	get: function() {
+    return this.amount
+  },
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperty(Resource.prototype, 'usage', {
+	get: function() {
+    let resource = this
+    let withdrawl = 0
+    let deposit   = 0
+    let net = resource.stored
+    let capacity = resource.capacity
+    _.forEach(Memory.taskQueue, function(t){
+      if(t.dest == resource.id){
+        let target = genRoom.getObject(t.target)
+        if(t.type == "deposit"){
+          deposit += target.stored
+        }
+        if(t.type == "pickup"){
+          withdrawl += target.capacity
+        }
+      }
+    })
+    net = net + deposit - withdrawl
+    return (net/capacity) * 100
+	},
+	enumerable: false,
+	configurable: true
+});

@@ -38,6 +38,63 @@ Creep.prototype.targeted = function() {
   return targetList
 }
 
+Object.defineProperty(Creep.prototype, 'stored', {
+	get: function() {
+    if(!this.store){
+      return 100
+    }
+    let used = 0
+    for(let resource of RESOURCES_ALL){
+      used += this.store.getUsedCapacity(resource)
+    }
+    return used
+	},
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperty(Creep.prototype, 'capacity', {
+	get: function() {
+    if(!this.store){
+      return 0
+    }
+    return this.store.getCapacity()
+	},
+	enumerable: false,
+	configurable: true
+});
+
+Creep.prototype.work = function(target){
+  if(target.level){
+    return this.upgradeController(target)
+  }
+  return this.build(target)
+}
+
+Object.defineProperty(Creep.prototype, 'usage', {
+	get: function() {
+    let withdrawl = 0
+    let deposit   = 0
+    let net = this.stored
+    let capacity = this.capacity
+    _.forEach(Memory.taskQueue, function(t){
+      if(t.dest == this.id){
+        let target = genRoom.getObject(t.target)
+        if(t.type == "deposit"){
+          deposit += target.stored
+        }
+        if(t.type == "withdrawl"){
+          withdrawl -= target.capacity
+        }
+      }
+    })
+    net = net + deposit - withdrawl
+    return (net/capacity) * 100
+	},
+	enumerable: false,
+	configurable: true
+});
+
 Object.defineProperty(Creep.prototype, 'netEnergy', {
 	get: function() {
     return this.store.getUsedCapacity(RESOURCE_ENERGY)
@@ -131,6 +188,38 @@ Creep.prototype.selfMaintain = function(){
     spawn.renew(this)
     return true
   }
+}
+
+Creep.prototype.get = function(dest){
+  if(dest.store){
+    for(let resource of RESOURCES_ALL){
+      let result = this.withdraw(dest, resource)
+      if(result == OK || result == ERR_NOT_IN_RANGE){
+        return result
+      }
+    }
+  }
+  if(dest.amount){
+    for(let resource of RESOURCES_ALL){
+      let result = this.pickup(dest, resource)
+      if(result == OK || result == ERR_NOT_IN_RANGE){
+        return result
+      }
+    }
+  }
+  throw('unable to get resources from:' + dest)
+}
+
+Creep.prototype.give = function(dest){
+  if(dest.store){
+    for(let resource of RESOURCES_ALL){
+      let result = this.transfer(dest, resource)
+      if(result == OK || result == ERR_NOT_IN_RANGE){
+        return result
+      }
+    }
+  }
+  throw('unable to give resources to:' + dest)
 }
 
 Creep.prototype.acquireEnergy = function(){

@@ -3,10 +3,10 @@ var roleWorker = require('role.worker')
 var roleTransport = require('role.transport')
 var roleScout = require('role.scout')
 
-global.miner =  new roleMiner()
-global.worker = new roleWorker()
-global.transport = new roleTransport()
-global.scout = new roleScout()
+global.globalMiner =  new roleMiner()
+global.globalWorker = new roleWorker()
+global.globalTransport = new roleTransport()
+global.globalScout = new roleScout()
 
 
 var MIN_ATTACKERS = 0
@@ -39,20 +39,13 @@ global.CREEP_TYPES = {
 }
 
 StructureSpawn.prototype.spawnCreeps = function() {
-  let finalResult = OK
-  for(let creepType in CREEP_TYPES){
-    try{
-      let result = this.spawn(creepType) 
-      if(result != OK){
-        finalResult = result
-      } else {
-        break
-      }
-    } catch(err){
-      console.log(err)
-    }
+  let result = OK
+  try{
+    result = this.spawn() 
+  } catch(err){
+    console.log(err)
   }
-  return finalResult
+  return result
 }
 StructureSpawn.prototype.spawnInfo = function(){
   var infostr;
@@ -78,15 +71,14 @@ StructureSpawn.prototype.creepCost = function(body){
     return cost
   }
 
-StructureSpawn.prototype.spawn = function(creepType) {
-//  // TODO: Improve queueing
+StructureSpawn.prototype.spawn = function() {
+  let creepType = ""
   if(this.spawning){
     return OK
   }
   _.forEach( CREEP_TYPES, (value, key, map) => {
-    let creepType = new value["object"]()
-    if(creepType.find().length + Memory.spawnQueue.filter(queue => queue == key) < creepType.wanted()){
-      console.log("adding "+ key +" to the queue")
+    let genCreep = new value["object"]()
+    if(genCreep.find().length + Memory.spawnQueue.filter(queue => queue == key) < genCreep.wanted()){
       Memory.spawnQueue.push(key)
     }
   })
@@ -101,8 +93,14 @@ StructureSpawn.prototype.spawn = function(creepType) {
     let memory          = CREEP_TYPES[creepType]["memory"]
     let name            = creepType + Game.time
 
-    if(transport.find().length == 0 || miner.find().length == 0){
+    if(globalTransport.find().length == 0 || globalMiner.find().length == 0){
       energyCapacity = 300
+      Memory.spawnQueue = _.reduce(Memory.spawnQueue, function(acc, val){
+        if(val == "transport" || val == "miner"){
+          acc.push(val)
+        }
+        return acc
+      }, [])
     }
     let body = []
     for(let i=1; i <= bodyMultiplier; i++){
@@ -110,6 +108,9 @@ StructureSpawn.prototype.spawn = function(creepType) {
       if(this.creepCost(body) + bodyUnitCost > energyCapacity){
         break
       }
+    }
+    if(body.length == 0){
+      return OK
     }
     if(this.creepCost(body) > energyAvailable) {
       Memory.spawnQueue.unshift(creepType)

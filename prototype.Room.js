@@ -23,6 +23,32 @@ Room.prototype.allStorage = function(){
   return storage
 }
 
+Room.prototype.getObject = function(identifier){
+  if(identifier.x){
+    return new RoomPosition(identifier.x, identifier.y, identifier.roomName)
+  }
+  if(typeof(identifier) == "string"){
+    return Game.getObjectById(identifier)
+  }
+}
+
+Room.prototype.perform = function(target, dest, taskType){
+  switch(taskType){
+    case "harvest":
+      return target.harvest(dest)
+    case "move":
+      return target.moveTo(dest)
+    case "pickup":
+      return target.get(dest)
+    case "deposit":
+      return target.give(dest)
+    case "work":
+      return target.work(dest)
+    default:
+      throw('Room.perform: unknown task type:' + taskType)
+  }
+}
+
 Room.prototype.allBaseStorage = function(){
   // TODO: Fix this crap
   let storage = _.reduce(Game.rooms, function(col, room, key){
@@ -144,6 +170,23 @@ Room.prototype.enemyTargets = function(){
   return enemyStructures.concat(enemyCreeps)
 }
 
+Room.prototype.buildContainers = function() {
+  for(let source of this.find(FIND_SOURCES)){
+    let containers = source.pos.findInRange(FIND_STRUCTURES, 1, {
+      filter: s => {
+        return s.structureType == STRUCTURE_CONTAINER
+      }
+    })
+    if(containers.length == 0){
+      for(let pos of source.pos.adjacent()){
+        if(pos.canBuild()){
+          return pos.createConstructionSite(STRUCTURE_CONTAINER)
+        }
+      }
+    }
+  }
+}
+
 Room.prototype.buildExtensions = function(){
 
   for(let structureType of [ STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_STORAGE ]){
@@ -166,7 +209,11 @@ Room.prototype.buildExtensions = function(){
 Room.prototype.placeNextBestExtension = function(extensions, structureType){
 
   const candidates = [];
-  const myspawns = this.find(FIND_MY_STRUCTURES);
+  const myspawns = this.find(FIND_MY_STRUCTURES, {
+    filter: s => {
+      return s.structureType == STRUCTURE_SPAWN
+    }
+  })
   extensions = extensions.concat(myspawns);
   for(const e of extensions){
     if(e){
