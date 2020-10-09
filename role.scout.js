@@ -16,6 +16,7 @@ module.exports = class {
   }
 
   wanted(){
+    return 0
     let rooms = _.values(Game.rooms)[0].adjacentRooms()
     return _.unique(rooms).length
   }

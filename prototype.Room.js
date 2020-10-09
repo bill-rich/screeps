@@ -71,33 +71,42 @@ Room.prototype.allSources = function(){
 }
 
 Room.prototype.allEnergy = function(){
-  let resources = this.find(FIND_DROPPED_RESOURCES, {
-    filter: (r) => {
-      return r.netEnergy > 0
-    }
-  })
-  let tombstones = this.find(FIND_TOMBSTONES, {
-    filter: t => {
-      return t.netEnergy > 0
-    }
-  })
-  let ruins = this.find(FIND_RUINS, {
-    filter: r => {
-      return r.netEnergy > 0
-    }
-  })
-  let containers = this.find(FIND_STRUCTURES, {
-    filter: s => {
-      return s.structureType == STRUCTURE_CONTAINER && s.netEnergy > 0
-    }
-  })
-  let storages = this.find(FIND_MY_STRUCTURES, {
-    filter: s => {
-      return s.structureType == STRUCTURE_STORAGE && s.netEnergy > 0
-    }
-  })
-  let volitile = resources.concat(tombstones)
-  let stable = containers.concat(ruins)
+  let resources = []
+  let tombstones = []
+  let ruins = []
+  let containers = []
+  let storages = []
+  let stable = []
+  let volitile = []
+  for(let room of _.values(Game.rooms)){
+    resources = resources.concat( room.find(FIND_DROPPED_RESOURCES, {
+      filter: (r) => {
+        return r.netEnergy > 0
+      }
+    }))
+    tombstones =  resources.concat(room.find(FIND_TOMBSTONES, {
+      filter: t => {
+        return t.netEnergy > 0
+      }
+    }))
+    ruins = ruins.concat(room.find(FIND_RUINS, {
+      filter: r => {
+        return r.netEnergy > 0
+      }
+    }))
+    containers = containers.concat(room.find(FIND_STRUCTURES, {
+      filter: s => {
+        return s.structureType == STRUCTURE_CONTAINER && s.netEnergy > 0
+      }
+    }))
+    storages = storages.concat(room.find(FIND_MY_STRUCTURES, {
+      filter: s => {
+        return s.structureType == STRUCTURE_STORAGE && s.netEnergy > 0
+      }
+    }))
+  }
+  volitile = resources.concat(tombstones)
+  stable = containers.concat(ruins)
   return {
     volitile: volitile,
     stable:   stable,

@@ -64,10 +64,13 @@ function transportTasks(){
       }
     }
   })
+
+  // Need to prioritize volitile. TODO: Add unique function so we can combine multiple lists.
   allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().volitile, pickers, "pickup"))
   allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().stable, pickers, "pickup"))
   allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().storage, pickers, "pickup"))
   allOptions = allOptions.concat(generatePossibleTasks(baseStorage, deliverers, "deposit"))
+  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().storage, deliverers, "deposit"))
   return sortCapacityTasks(allOptions)
 }
 
