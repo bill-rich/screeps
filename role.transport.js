@@ -14,7 +14,8 @@ module.exports = class {
   }
 
   wanted(){
-    return worker.find().length + _.values(Game.rooms)[0].allSources().length * 2
+    //return 3
+    return globalWorker.find().length + globalMiner.find().length * 2
   }
 
   run(){

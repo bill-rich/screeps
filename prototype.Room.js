@@ -23,6 +23,36 @@ Room.prototype.allStorage = function(){
   return storage
 }
 
+Room.prototype.getObject = function(identifier){
+  if(!identifier){
+    return OK
+  }
+  if(identifier.x){
+    return new RoomPosition(identifier.x, identifier.y, identifier.roomName)
+  }
+  if(typeof(identifier) == "string"){
+    return Game.getObjectById(identifier)
+  }
+}
+
+Room.prototype.perform = function(target, dest, taskType){
+  switch(taskType){
+    case "harvest":
+      return target.harvest(dest)
+    case "move":
+      //target.autoRepair()
+      return target.moveTo(dest)
+    case "pickup":
+      return target.get(dest)
+    case "deposit":
+      return target.give(dest)
+    case "work":
+      return target.work(dest)
+    default:
+      throw('Room.perform: unknown task type:' + taskType)
+  }
+}
+
 Room.prototype.allBaseStorage = function(){
   // TODO: Fix this crap
   let storage = _.reduce(Game.rooms, function(col, room, key){
@@ -44,34 +74,43 @@ Room.prototype.allSources = function(){
   }, [])
 }
 
-Room.prototype.allEnergy = function(){
-  let resources = this.find(FIND_DROPPED_RESOURCES, {
-    filter: (r) => {
-      return r.netEnergy > 0
-    }
-  })
-  let tombstones = this.find(FIND_TOMBSTONES, {
-    filter: t => {
-      return t.netEnergy > 0
-    }
-  })
-  let ruins = this.find(FIND_RUINS, {
-    filter: r => {
-      return r.netEnergy > 0
-    }
-  })
-  let containers = this.find(FIND_STRUCTURES, {
-    filter: s => {
-      return s.structureType == STRUCTURE_CONTAINER && s.netEnergy > 0
-    }
-  })
-  let storages = this.find(FIND_MY_STRUCTURES, {
-    filter: s => {
-      return s.structureType == STRUCTURE_STORAGE && s.netEnergy > 0
-    }
-  })
-  let volitile = resources.concat(tombstones)
-  let stable = containers.concat(ruins)
+Room.prototype.allEnergy = function(minEnergy=1){
+  let resources = []
+  let tombstones = []
+  let ruins = []
+  let containers = []
+  let storages = []
+  let stable = []
+  let volitile = []
+  for(let room of _.values(Game.rooms)){
+    resources = resources.concat( room.find(FIND_DROPPED_RESOURCES, {
+      filter: (r) => {
+        return r.netEnergy >= minEnergy
+      }
+    }))
+    tombstones =  resources.concat(room.find(FIND_TOMBSTONES, {
+      filter: t => {
+        return t.netEnergy >= minEnergy
+      }
+    }))
+    ruins = ruins.concat(room.find(FIND_RUINS, {
+      filter: r => {
+        return r.netEnergy >= minEnergy
+      }
+    }))
+    containers = containers.concat(room.find(FIND_STRUCTURES, {
+      filter: s => {
+        return s.structureType == STRUCTURE_CONTAINER && s.netEnergy >= minEnergy
+      }
+    }))
+    storages = storages.concat(room.find(FIND_MY_STRUCTURES, {
+      filter: s => {
+        return s.structureType == STRUCTURE_STORAGE && s.netEnergy >= minEnergy
+      }
+    }))
+  }
+  volitile = resources.concat(tombstones)
+  stable = containers.concat(ruins)
   return {
     volitile: volitile,
     stable:   stable,
@@ -80,7 +119,7 @@ Room.prototype.allEnergy = function(){
 }
 
 Room.prototype.createRoads = function(){
-  if(this.controller.level < 2){
+  if(this.controller && this.controller.level < 2){
     return OK
   }
   if(_.values(Game.constructionSites).length > 0){
@@ -144,6 +183,23 @@ Room.prototype.enemyTargets = function(){
   return enemyStructures.concat(enemyCreeps)
 }
 
+Room.prototype.buildContainers = function() {
+  for(let source of this.find(FIND_SOURCES)){
+    let containers = source.pos.findInRange(FIND_STRUCTURES, 1, {
+      filter: s => {
+        return s.structureType == STRUCTURE_CONTAINER
+      }
+    })
+    if(containers.length == 0){
+      for(let pos of source.pos.adjacent()){
+        if(pos.canBuild()){
+          return pos.createConstructionSite(STRUCTURE_CONTAINER)
+        }
+      }
+    }
+  }
+}
+
 Room.prototype.buildExtensions = function(){
 
   for(let structureType of [ STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_STORAGE ]){
@@ -152,12 +208,12 @@ Room.prototype.buildExtensions = function(){
     var level = controller.level;
     if(!level){return;}
     var allowed_extensions = CONTROLLER_STRUCTURES[structureType][level];
-    var extensions = this.find(FIND_STRUCTURES,{filter: {structureType: structureType}});
+    var extensions = this.find(FIND_STRUCTURES,{filter: {structureType: STRUCTURE_EXTENSION}});
     var extensions_pending = this.find(FIND_CONSTRUCTION_SITES,{filter: {structureType: structureType}}).length;
 
-    if(extensions_pending < 1 && allowed_extensions > extensions.length){
-      this.placeNextBestExtension(extensions, structureType);
-      return
+    //if(extensions_pending < 1 && allowed_extensions > extensions.length){
+    if(extensions_pending < 1){
+      this.placeNextBestExtension(extensions, structureType)
     }
   }
 
@@ -166,7 +222,11 @@ Room.prototype.buildExtensions = function(){
 Room.prototype.placeNextBestExtension = function(extensions, structureType){
 
   const candidates = [];
-  const myspawns = this.find(FIND_MY_STRUCTURES);
+  const myspawns = this.find(FIND_MY_STRUCTURES, {
+    filter: s => {
+      return s.structureType == STRUCTURE_SPAWN
+    }
+  })
   extensions = extensions.concat(myspawns);
   for(const e of extensions){
     if(e){
@@ -184,5 +244,6 @@ Room.prototype.placeNextBestExtension = function(extensions, structureType){
   if(myspawns[0]){
     const selected = candidates[Math.floor(Math.random()*candidates.length)];
     const created =  this.createConstructionSite(selected, structureType);
+    return created
   }
 }

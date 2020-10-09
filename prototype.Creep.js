@@ -13,17 +13,19 @@ function sourceUsers(source){
     return count
 }
 
-function autoRepair(creep){
-	if(creep.store[RESOURCE_ENERGY] > 0){
-		var damaged  = creep.pos.findInRange(FIND_STRUCTURES, 1, {
+Creep.prototype.autoRepair = function() {
+	if(this.store[RESOURCE_ENERGY] > 0){
+		var damaged  = this.pos.findInRange(FIND_STRUCTURES, 1, {
 			filter: (structure) => {
-				return (structure.pos != creep.pos && (structure.hits / structure.hitsMax) < 0.8)
+				return (structure.pos != this.pos && (structure.hits / structure.hitsMax) < 0.8)
 					&& !DO_NOT_REPAIR.includes(structure.structureType);
 			}
 		});
 		if(damaged.length > 0){
-			creep.say("auto 🛠");
-			var repair_result = creep.repair(damaged[0]);
+			var result = creep.repair(damaged[0]);
+      if(result == OK){
+        this.say("auto 🛠");
+      }
 		}
 	}
 }
@@ -37,6 +39,63 @@ Creep.prototype.targeted = function() {
   })
   return targetList
 }
+
+Object.defineProperty(Creep.prototype, 'stored', {
+	get: function() {
+    if(!this.store){
+      return 100
+    }
+    let used = 0
+    for(let resource of RESOURCES_ALL){
+      used += this.store.getUsedCapacity(resource)
+    }
+    return used
+	},
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperty(Creep.prototype, 'capacity', {
+	get: function() {
+    if(!this.store){
+      return 0
+    }
+    return this.store.getCapacity()
+	},
+	enumerable: false,
+	configurable: true
+});
+
+Creep.prototype.work = function(target){
+  if(target.level){
+    return this.upgradeController(target)
+  }
+  return this.build(target)
+}
+
+Object.defineProperty(Creep.prototype, 'usage', {
+	get: function() {
+    let withdrawl = 0
+    let deposit   = 0
+    let net = this.stored
+    let capacity = this.capacity
+    _.forEach(Memory.taskQueue, function(t){
+      if(t.dest == this.id){
+        let target = genRoom.getObject(t.target)
+        if(t.type == "deposit"){
+          deposit += target.stored
+        }
+        if(t.type == "withdrawl"){
+          withdrawl -= target.capacity
+        }
+      }
+    })
+    net = net + deposit - withdrawl
+    return (net/capacity) * 100
+	},
+	enumerable: false,
+	configurable: true
+});
 
 Object.defineProperty(Creep.prototype, 'netEnergy', {
 	get: function() {
@@ -131,6 +190,38 @@ Creep.prototype.selfMaintain = function(){
     spawn.renew(this)
     return true
   }
+}
+
+Creep.prototype.get = function(dest){
+  if(dest.store){
+    for(let resource of RESOURCES_ALL){
+      let result = this.withdraw(dest, resource)
+      if(result == OK || result == ERR_NOT_IN_RANGE || result == ERR_BUSY){
+        return result
+      }
+    }
+  }
+  if(dest.amount){
+    for(let resource of RESOURCES_ALL){
+      let result = this.pickup(dest, resource)
+      if(result == OK || result == ERR_NOT_IN_RANGE || result == ERR_BUSY){
+        return result
+      }
+    }
+  }
+  throw('unable to get resources from:' + dest)
+}
+
+Creep.prototype.give = function(dest){
+  if(dest.store){
+    for(let resource of RESOURCES_ALL){
+      let result = this.transfer(dest, resource)
+      if(result == OK || result == ERR_NOT_IN_RANGE){
+        return result
+      }
+    }
+  }
+  throw('unable to give resources to:' + dest)
 }
 
 Creep.prototype.acquireEnergy = function(){
