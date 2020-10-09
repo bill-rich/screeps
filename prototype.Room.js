@@ -37,6 +37,7 @@ Room.prototype.perform = function(target, dest, taskType){
     case "harvest":
       return target.harvest(dest)
     case "move":
+      //target.autoRepair()
       return target.moveTo(dest)
     case "pickup":
       return target.get(dest)
@@ -70,7 +71,7 @@ Room.prototype.allSources = function(){
   }, [])
 }
 
-Room.prototype.allEnergy = function(){
+Room.prototype.allEnergy = function(minEnergy=1){
   let resources = []
   let tombstones = []
   let ruins = []
@@ -81,27 +82,27 @@ Room.prototype.allEnergy = function(){
   for(let room of _.values(Game.rooms)){
     resources = resources.concat( room.find(FIND_DROPPED_RESOURCES, {
       filter: (r) => {
-        return r.netEnergy > 0
+        return r.netEnergy >= minEnergy
       }
     }))
     tombstones =  resources.concat(room.find(FIND_TOMBSTONES, {
       filter: t => {
-        return t.netEnergy > 0
+        return t.netEnergy >= minEnergy
       }
     }))
     ruins = ruins.concat(room.find(FIND_RUINS, {
       filter: r => {
-        return r.netEnergy > 0
+        return r.netEnergy >= minEnergy
       }
     }))
     containers = containers.concat(room.find(FIND_STRUCTURES, {
       filter: s => {
-        return s.structureType == STRUCTURE_CONTAINER && s.netEnergy > 0
+        return s.structureType == STRUCTURE_CONTAINER && s.netEnergy >= minEnergy
       }
     }))
     storages = storages.concat(room.find(FIND_MY_STRUCTURES, {
       filter: s => {
-        return s.structureType == STRUCTURE_STORAGE && s.netEnergy > 0
+        return s.structureType == STRUCTURE_STORAGE && s.netEnergy >= minEnergy
       }
     }))
   }

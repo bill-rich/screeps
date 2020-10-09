@@ -20,8 +20,19 @@ module.exports.loop = function () {
   setUpMemory()
 
   genRoom.buildExtensions()
-  genRoom.createRoads()
   genRoom.buildContainers()
+
+  for(let room of _.values(Game.rooms)){
+    room.createRoads()
+    for(let tow of room.find(FIND_STRUCTURES, {
+      filter: s => {
+        return s.structureType == STRUCTURE_TOWER
+      }
+    })){
+      let t = new tower(tow)
+      t.run()
+    }
+  }
 
   spawnTasks()
   createTasks()
@@ -30,32 +41,55 @@ module.exports.loop = function () {
 
 function runTasks(){
   for(let task of Memory.taskQueue){
-    try{
-      let target = genRoom.getObject(task.target)
-      let dest   = genRoom.getObject(task.dest)
-      if(genRoom.perform(target, dest, task.type) == ERR_NOT_IN_RANGE){
-        genRoom.perform(target, dest, "move")
-      }
-    } catch(err) {
-      console.log("Error running task. target:" + task.target + ", dest:" + task.dest + "   " + err)
+    runTask(task)
+  }
+  for(let creep of _.values(Game.creeps)){
+    if(creep.memory.task){
+      runTask(creep.memory.task)
     }
   }
 }
 
+function runTask(task){
+  let target = genRoom.getObject(task.target)
+  let dest   = genRoom.getObject(task.dest)
+  try{
+    target.memory.task = task
+    let result = genRoom.perform(target, dest, task.type)
+    if(result == ERR_NOT_IN_RANGE){
+      result = genRoom.perform(target, dest, "move")
+    }
+    if(result != OK){
+      delete target.memory.task
+    }
+  } catch(err) {
+    if(target && target.memory){
+      delete target.memory.task
+    }
+    //console.log("Error running task. target:" + task.target + ", dest:" + task.dest + "   " + err)
+  }
+}
+
 function createTasks(){
+  if(Game.time - Memory.lastTaskTime < 5){
+  }
   Memory.taskQueue = []
   Memory.taskQueue = Memory.taskQueue.concat(miningTasks())
   transportTasks()
   workerTasks()
+  Memory.lastTaskTime = Game.time
 }
 
 function transportTasks(){
   let allOptions = []
   let deliverers = _.filter(globalTransport.find(), function(t){
-    return t.netEnergy > 0
+    return t.netEnergy >= 100 && !t.memory.task
   })
   let pickers = _.filter(globalTransport.find(), function(t){
-    return t.energyCapacity > 0
+    return t.energyCapacity >= 50 && !t.memory.task
+  })
+  let recievers = _.filter(globalWorker.find(), function(t){
+    return t.energyCapacity >= 25 && !t.memory.task
   })
   let baseStorage = _.filter(genRoom.allBaseStorage(), function(s){
     for(let resource of RESOURCES_ALL){
@@ -66,15 +100,24 @@ function transportTasks(){
   })
 
   // Need to prioritize volitile. TODO: Add unique function so we can combine multiple lists.
-  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().volitile, pickers, "pickup"))
-  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().stable, pickers, "pickup"))
-  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().storage, pickers, "pickup"))
-  allOptions = allOptions.concat(generatePossibleTasks(baseStorage, deliverers, "deposit"))
-  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().storage, deliverers, "deposit"))
-  return sortCapacityTasks(allOptions)
+  let allEnergy = genRoom.allEnergy(100)
+  let high = generatePossibleTasks(allEnergy.volitile, pickers, "pickup")
+  let medium = generatePossibleTasks(allEnergy.stable, pickers, "pickup", 10)
+  let low = generatePossibleTasks(allEnergy.storage, pickers, "pickup", 1000)
+  let delHigh = generatePossibleTasks(baseStorage, deliverers, "deposit")
+  let delLow = generatePossibleTasks(allEnergy.storage, deliverers, "deposit", 1000)
+  let transfers = generatePossibleTasks(recievers, deliverers, "deposit", 10000)
+
+  return sortCapacityTasks([...high, ...medium, ...low, ...delHigh, ...delLow, ...transfers])
 }
 
-function generatePossibleTasks(dests, targets, taskType){
+function uniqueTaskTargets(taskList){
+  _.uniqueBy(taskList, function(task){
+    return task.target
+  })
+}
+
+function generatePossibleTasks(dests, targets, taskType, handicap = 1){
   let allOptions = []
   for(let dest of dests){
     for(let target of targets){
@@ -82,7 +125,7 @@ function generatePossibleTasks(dests, targets, taskType){
         type:  taskType,
         dest:  dest.id,
         target: target.id,
-        cost:  PathFinder.search(dest.pos, target.pos).cost,
+        cost:  PathFinder.search(dest.pos, target.pos).cost * handicap,
       }
       allOptions.push(task)
     }
@@ -93,10 +136,10 @@ function generatePossibleTasks(dests, targets, taskType){
 function workerTasks() {
   let allOptions = []
   let builders = _.filter(globalWorker.find(), function(t){
-    return t.netEnergy > 0
+    return t.netEnergy > 0 && !t.memory.task
   })
   let pickers = _.filter(globalWorker.find(), function(t){
-    return t.energyCapacity > 0
+    return t.energyCapacity > 0 && !t.memory.task
   })
   let conSites = _.values(Game.constructionSites)
   let controllers = _.reduce(Game.rooms, function (acc, val, key){
@@ -106,9 +149,10 @@ function workerTasks() {
     return acc
   }, [] )
 
-  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().volitile, pickers, "pickup"))
-  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().stable, pickers, "pickup"))
-  allOptions = allOptions.concat(generatePossibleTasks(genRoom.allEnergy().storage, pickers, "pickup"))
+  let allEnergy = genRoom.allEnergy(100)
+  allOptions = allOptions.concat(generatePossibleTasks(allEnergy.volitile, pickers, "pickup"))
+  allOptions = allOptions.concat(generatePossibleTasks(allEnergy.stable, pickers, "pickup"))
+  allOptions = allOptions.concat(generatePossibleTasks(allEnergy.storage, pickers, "pickup"))
   allOptions = allOptions.concat(generatePossibleTasks(conSites, builders, "work"))
   allOptions = allOptions.concat(generatePossibleTasks(controllers, builders, "work"))
 

@@ -13,17 +13,19 @@ function sourceUsers(source){
     return count
 }
 
-function autoRepair(creep){
-	if(creep.store[RESOURCE_ENERGY] > 0){
-		var damaged  = creep.pos.findInRange(FIND_STRUCTURES, 1, {
+Creep.prototype.autoRepair = function() {
+	if(this.store[RESOURCE_ENERGY] > 0){
+		var damaged  = this.pos.findInRange(FIND_STRUCTURES, 1, {
 			filter: (structure) => {
-				return (structure.pos != creep.pos && (structure.hits / structure.hitsMax) < 0.8)
+				return (structure.pos != this.pos && (structure.hits / structure.hitsMax) < 0.8)
 					&& !DO_NOT_REPAIR.includes(structure.structureType);
 			}
 		});
 		if(damaged.length > 0){
-			creep.say("auto 🛠");
-			var repair_result = creep.repair(damaged[0]);
+			var result = creep.repair(damaged[0]);
+      if(result == OK){
+        this.say("auto 🛠");
+      }
 		}
 	}
 }
@@ -194,7 +196,7 @@ Creep.prototype.get = function(dest){
   if(dest.store){
     for(let resource of RESOURCES_ALL){
       let result = this.withdraw(dest, resource)
-      if(result == OK || result == ERR_NOT_IN_RANGE){
+      if(result == OK || result == ERR_NOT_IN_RANGE || result == ERR_BUSY){
         return result
       }
     }
@@ -202,7 +204,7 @@ Creep.prototype.get = function(dest){
   if(dest.amount){
     for(let resource of RESOURCES_ALL){
       let result = this.pickup(dest, resource)
-      if(result == OK || result == ERR_NOT_IN_RANGE){
+      if(result == OK || result == ERR_NOT_IN_RANGE || result == ERR_BUSY){
         return result
       }
     }

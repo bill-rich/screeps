@@ -65,9 +65,6 @@ Object.defineProperty(Resource.prototype, 'usage', {
       }
     })
     net = net + deposit - withdrawl
-    if(this.id == '5f7fb95e3addba036898cd4b'){
-      console.log(net +":"+ capacity)
-    }
     return (net/capacity) * 100
 	},
 	enumerable: false,
