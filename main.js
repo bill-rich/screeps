@@ -19,8 +19,6 @@ module.exports.loop = function () {
   pruneMemory()
   setUpMemory()
 
-  genRoom.buildExtensions()
-  genRoom.buildContainers()
 
   for(let room of _.values(Game.rooms)){
     room.createRoads()
@@ -33,6 +31,9 @@ module.exports.loop = function () {
       t.run()
     }
   }
+
+  genRoom.buildExtensions()
+  genRoom.buildContainers()
 
   creepTasks()
   spawnTasks()
@@ -60,7 +61,7 @@ function runTask(task){
     if(result == ERR_NOT_IN_RANGE){
       result = genRoom.perform(target, dest, "move")
     }
-    if(result != OK){
+    if(result != OK && result != ERR_TIRED){
       delete target.memory.task
     }
   } catch(err) {
