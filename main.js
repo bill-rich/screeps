@@ -32,11 +32,24 @@ module.exports.loop = function () {
     }
   }
 
-  genRoom.buildExtensions()
-  genRoom.buildContainers()
+  try{
+    genRoom.buildExtensions()
+    genRoom.buildContainers()
+  } catch (err) {
+    console.log(err)
+  }
 
-  creepTasks()
-  spawnTasks()
+  try{
+    creepTasks()
+  } catch (err){
+    console.log(err)
+  }
+
+  try{
+    spawnTasks()
+  } catch (err) {
+    console.log(err)
+  }
   createTasks()
   runTasks()
 }
@@ -73,8 +86,15 @@ function runTask(task){
 }
 
 function createTasks(){
-  if(Game.time - Memory.lastTaskTime < 5){
+  if(Game.time - Memory.lastTaskTime < Memory.taskSmart){
+    return
   }
+  if(Game.cpu.bucket < Memory.cpuBucket){
+    Memory.taskSmart++
+  } else {
+    Memory.taskSmart--
+  }
+  Memory.cpuBucket = Game.cpu.bucket
   Memory.taskQueue = []
   Memory.taskQueue = Memory.taskQueue.concat(miningTasks())
   transportTasks()
@@ -267,6 +287,14 @@ function creepTasks(){
     //let genCreep = new CREEP_TYPES[creepType]["object"]()
     for(let creep of genCreep.find()){
       let creepModel = new CREEP_TYPES['scout']["object"](creep)
+      creepModel.run()
+    }
+  }
+  for(let creepType in ['attacker']){
+    let genCreep = new CREEP_TYPES['attacker']["object"]()
+    //let genCreep = new CREEP_TYPES[creepType]["object"]()
+    for(let creep of genCreep.find()){
+      let creepModel = new CREEP_TYPES['attacker']["object"](creep)
       creepModel.run()
     }
   }

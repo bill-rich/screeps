@@ -2,11 +2,13 @@ var roleMiner  = require('role.miner')
 var roleWorker = require('role.worker')
 var roleTransport = require('role.transport')
 var roleScout = require('role.scout')
+var roleAttacker = require('role.attacker')
 
 global.globalMiner =  new roleMiner()
 global.globalWorker = new roleWorker()
 global.globalTransport = new roleTransport()
 global.globalScout = new roleScout()
+global.globalAttacker = new roleAttacker()
 
 
 var MIN_ATTACKERS = 0
@@ -35,6 +37,12 @@ global.CREEP_TYPES = {
     maxMultiplier : 2,
     memory        : { role: "scout" },
     object        : roleScout
+  },
+  attacker: {
+    body          : [MOVE,ATTACK],
+    maxMultiplier : 2,
+    memory        : { role: "attacker" },
+    object        : roleAttacker
   },
 }
 
