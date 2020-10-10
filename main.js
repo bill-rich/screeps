@@ -91,7 +91,7 @@ function createTasks(){
   }
   if(Game.cpu.bucket < Memory.cpuBucket){
     Memory.taskSmart++
-  } else {
+  } else if(Memory.taskSmart >= 0) {
     Memory.taskSmart--
   }
   Memory.cpuBucket = Game.cpu.bucket
