@@ -40,7 +40,37 @@ const CreepTypes: CreepType[] = [
 ]
 
 function booterRun(me: Creep){
-  me.say("sucker")
+  const sources = me.room.find(FIND_SOURCES) 
+  sources.sort(function(a,b):number{return me.pos.findPathTo(a.pos.x, a.pos.y).length - me.pos.findPathTo(b.pos.x, b.pos.y).length})
+  let source: Source
+  if(sources.length > 0){
+    source = sources[0]
+  } else {
+    me.say("ERROR:NO SOURCES")
+    return
+  }
+
+  if(me.store.getUsedCapacity(RESOURCE_ENERGY) == 0 || (me.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && me.pos.findPathTo(source.pos.x, source.pos.y).length < 5)){
+    if(me.harvest(source) == ERR_NOT_IN_RANGE){
+      me.moveTo(source.pos.x, source.pos.y)
+    }
+    return
+  }
+
+  const spawns = me.room.find(FIND_MY_SPAWNS)
+  if(spawns.length > 0 && spawns[0].store.getFreeCapacity(RESOURCE_ENERGY) > 0){
+    if(me.transfer(spawns[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
+      me.moveTo(spawns[0].pos.x, spawns[0].pos.y)
+    }
+    return
+  }
+
+  const controller = me.room.controller
+  if(controller){
+    if(me.upgradeController(controller) == ERR_NOT_IN_RANGE){
+      me.moveTo(controller.pos.x, controller.pos.y)
+    }
+  }
 }
 
 function runCreeps(){
